@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>io.confluent.frauddemo</groupId>
+    <artifactId>fraud-tools</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <name>Fraud Detection Agent Tools</name>
+    <description>
+        Flink UDFs exposed as Streaming Agent tools (flag_transaction, freeze_account,
+        notify_user). These are mock actions: they return a confirmation string and have
+        no real side effect, mirroring the original agent/tools.py stubs. The difference
+        is that here they are genuinely invoked by the agent during tool-calling.
+    </description>
+
+    <properties>
+        <maven.compiler.release>11</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- Confluent Cloud for Apache Flink supports Java 11-17 UDFs. -->
+        <flink.version>1.19.1</flink.version>
+    </properties>
+
+    <dependencies>
+        <!-- ScalarFunction lives here; provided by the Flink runtime, not bundled. -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-table-common</artifactId>
+            <version>${flink.version}</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>fraud-tools</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+            </plugin>
+        </plugins>
+    </build>
+</project>

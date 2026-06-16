@@ -1,0 +1,42 @@
+# --- Secrets / generated config ---
+.env
+*.tfvars
+!*.tfvars.example
+
+# --- Python ---
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# --- Terraform ---
+**/.terraform/
+**/.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# --- Java / Maven build output ---
+# The committed UDF JAR is force-added and uploaded by Terraform; keep it.
+# Use target/* (not target/) so the JAR can be re-included — a fully ignored
+# directory cannot have its contents un-ignored.
+tools-udf/target/*
+!tools-udf/target/fraud-tools.jar
+*.class
+dependency-reduced-pom.xml
+
+# --- Editor / OS ---
+.claude/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

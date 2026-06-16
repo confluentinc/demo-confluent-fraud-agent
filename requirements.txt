@@ -1,0 +1,8 @@
+# Local apps (producer + dashboard) that talk to Confluent Cloud.
+# All stream processing / the agent runs in Confluent Cloud (see terraform/).
+confluent-kafka[schemaregistry,avro]
+fastavro
+python-dotenv
+streamlit
+altair
+pandas
