@@ -33,15 +33,7 @@ Everything except the producer and dashboard runs in Confluent Cloud — there i
 </tr>
 </table>
 
-```
-producer ─▶ transactions · user_logins · account_changes ─▶ Flink: UNION ALL
-   │                                                              │
-   │                                          3s SESSION window per user_id
-   │                                                              ▼
-   │                       AI_RUN_AGENT(fraud_detection_agent)  ◀─ Bedrock Claude + 3 UDF tools
-   │                                                              │
-   └──────────────────────── dashboard ◀── fraud_alerts ◀── parse JSON verdict
-```
+![Stream Lineage — end-to-end pipeline](images/demo/17-recap-lineage.png)
 
 ## Prerequisites
 
