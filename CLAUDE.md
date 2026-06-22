@@ -97,6 +97,15 @@ cd tools-udf && ./build.sh    # then commit target/fraud-tools.jar
 
 ## Gotchas
 
+- **The agent statement stalls on malformed model output if not hardened.** `CREATE AGENT`
+  fails the whole statement after `max_consecutive_failures` (default **3**) consecutive bad
+  agent runs — e.g. when Claude calls a tool then reverses it / "no tools needed" / emits
+  non-JSON. Mitigated on `module.agent` (`flink.tf`) by: (a) a hardened prompt (decide score
+  first, make all tool calls up front, never reverse a call, final message = the single JSON
+  object only), (b) `handle_exception = 'continue'` (skip a bad row instead of counting it as
+  a failure), and (c) `max_consecutive_failures = '5'`. **Symptom if regressed:** `detect-fraud`
+  goes FAILED after a few minutes and the dashboard empties out, even though Bedrock access is
+  fine. (`handle_exception` wasn't in the docs at time of writing but is accepted by the API.)
 - **Watermark idle-timeout is required for steady alerts.** Confluent Cloud's default
   "progressive idleness" grows the idle-partition timeout with statement age (10s → up to
   5 min). With 6-partition topics and a producer that only touches some users per cycle, the

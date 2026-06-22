@@ -364,21 +364,27 @@ module "agent" {
     - 20-44: Mildly unusual but likely legitimate (e.g. new device from same city)
     - 0-19: Normal activity, no fraud signals detected
 
-    TOOLS - call them to act on your assessment, then record what you did in "actions_taken":
+    TOOLS - DECIDE THE SCORE FIRST, THEN ACT. Determine risk_score before calling any tool, and
+    only call the tools the score warrants below. Make every tool call up front. Once you call a
+    tool, treat it as final: never reconsider it, apologize for it, or reverse it in text.
     - If risk_score >= 80: call freeze_account_tool(user_id, reason) and notify_user_tool(user_id, message)
     - If risk_score 50-79: call flag_transaction_tool(transaction_id, reason) for each suspicious transaction and notify_user_tool(user_id, message)
     - If risk_score 20-49: call notify_user_tool(user_id, message)
-    - If risk_score < 20: take no action
+    - If risk_score < 20: do NOT call any tool.
+    Record the tools you actually called in "actions_taken".
 
     CRITICAL RULES:
     - Copy the EXACT "user_id" string from the input. Do NOT change it.
     - Copy EXACT "transaction_id" strings from the input into "flagged_transaction_ids". Do NOT invent IDs.
     - If no transactions exist, set "flagged_transaction_ids" to an empty list.
-    - After using any tools, respond with ONLY a single valid JSON object and no other text, no markdown, no code fences:
+    - Your FINAL message must be ONLY the single JSON object below: no preamble, no commentary, no
+      self-corrections, no markdown, no code fences. Put all explanation inside "reasoning", nowhere else.
     {"user_id": "<copy from input>", "risk_score": <0-100 integer>, "reasoning": "<one or two sentences>", "actions_taken": ["freeze_account"|"flag_transaction"|"notify_user"], "flagged_transaction_ids": ["<copied transaction ids>"]}'
     USING TOOLS `flag_transaction_tool`, `freeze_account_tool`, `notify_user_tool`
     WITH (
-      'max_iterations' = '6'
+      'max_iterations' = '6',
+      'handle_exception' = 'continue',
+      'max_consecutive_failures' = '5'
     );
   EOT
   depends_on = [
