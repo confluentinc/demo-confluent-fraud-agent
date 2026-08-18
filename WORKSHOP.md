@@ -266,6 +266,7 @@ closes when the user goes quiet, so a fraud burst is never split in two. This st
 > - **`startup.mode = 'latest-offset'`** reads only new events. Everyone shares one Bedrock account, so replaying topic history would spike the shared quota.
 
 ```sql
+SET 'client.statement-name' = 'create-activity-profiles';
 SET 'sql.tables.scan.idle-timeout' = '5 s';
 SET 'sql.tables.scan.startup.mode' = 'latest-offset';
 ```
