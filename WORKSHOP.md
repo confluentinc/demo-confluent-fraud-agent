@@ -422,6 +422,8 @@ profile, the exact text the agent scores:
 SELECT * FROM activity_profiles;
 ```
 
+<img src="images/workshop/8_step8_4.png" alt="activity_profiles query results" width="700">
+
 **5. Add another terminal and start the dashboard** (activate the venv there first):
 
 ```bash
@@ -433,7 +435,7 @@ Give it ~1–2 minutes: as each user's activity burst closes its session window,
 it and high-risk cases surface as alerts. Keep the producer running — the dashboard shows alerts
 generated from here on.
 
-<img src="images/workshop/8_step8_4.png" alt="Fraud Detection Dashboard" width="800">
+<img src="images/workshop/8_step8_5.png" alt="Fraud Detection Dashboard" width="800">
 
 
 You can also watch the high-risk verdicts directly in the workspace:
@@ -441,6 +443,8 @@ You can also watch the high-risk verdicts directly in the workspace:
 ```sql
 SELECT * FROM fraud_alerts WHERE risk_score >= 70;
 ```
+
+<img src="images/workshop/8_step8_6.png" alt="fraud_alerts high-risk query results" width="700">
 
 ## 9. Cleanup
 
