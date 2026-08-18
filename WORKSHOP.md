@@ -446,7 +446,15 @@ SELECT * FROM fraud_alerts WHERE risk_score >= 70;
 
 <img src="images/workshop/8_step8_6.png" alt="fraud_alerts high-risk query results" width="700">
 
+## 🎉 That's a wrap
+
+You just built a real-time, AI-powered fraud detection pipeline — no batch jobs, no brittle
+rules engine. Raw events stream in, Flink windows them per user, and a Claude-powered Streaming
+Agent scores every burst and acts in seconds. Not bad for an hour's work.
+
 ## 9. Cleanup
+
+Tear it all down when you're done (so the credits last):
 
 ```bash
 cd terraform && terraform destroy -var-file=workshop.tfvars -auto-approve
