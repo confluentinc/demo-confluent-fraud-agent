@@ -116,15 +116,17 @@ terraform output flink_catalog       # -> the workspace Catalog to select
 terraform output flink_database      # -> the workspace Database to select
 ```
 
-## 2. Build the pipeline — run these statements in order (~15–25 min)
+## 2. Connect the model — give the agent a brain
 
-Run each statement below in the workspace, one at a time, waiting for each to finish before
-the next. Statements 2.1–2.8 are DDL and reach **COMPLETED** in a few seconds; statements 2.9
-and 2.10 are continuous and go **RUNNING**.
+Over the next five sections (2–6) you'll assemble the fraud-detection pipeline one piece at a
+time. Run each SQL statement in the Flink workspace, top to bottom, waiting for each to finish
+before the next.
 
-### 2.1 Register the model
-
-Wires up the Bedrock Claude model behind a callable name.
+Fraud rarely fits fixed if/else rules — catching it takes judgment. So the first thing you do
+is give the pipeline access to a large language model. Terraform already created a **Bedrock
+connection** to Claude; this statement registers that model as `fraud_model` so Flink SQL can
+call it like any other function. On its own the model just "thinks" — you'll give it actions
+and a job in the next sections. (Completes in a few seconds.)
 
 ```sql
 CREATE MODEL `fraud_model`
@@ -138,10 +140,15 @@ WITH (
 );
 ```
 
-### 2.2–2.4 Create the three function tools
+## 3. Define the actions — give the agent hands
 
-These map the pre-uploaded UDF JAR classes to Flink functions. **Replace
-`<TOOLS_ARTIFACT_ID>` in all three with your `tools_artifact_id` output.**
+A fraud analyst that can only *think* isn't useful; it has to *act* — flag a suspicious
+transaction, freeze a compromised account, or warn the customer. You wire that up in two moves.
+
+**First, register each action as a Flink function**, backed by the UDF JAR Terraform uploaded.
+(In this demo the functions are safe mocks that just return a confirmation string, but the agent
+genuinely calls them.) **Replace `<TOOLS_ARTIFACT_ID>` in all three with your
+`tools_artifact_id` output.**
 
 ```sql
 CREATE FUNCTION `flag_transaction`
@@ -161,9 +168,9 @@ AS 'io.confluent.frauddemo.NotifyUser'
 USING JAR 'confluent-artifact://<TOOLS_ARTIFACT_ID>';
 ```
 
-### 2.5–2.7 Wrap the functions as agent tools
-
-Tools give the agent a name + description it can reason about when deciding to act.
+**Then, expose each function as a tool.** A tool adds the plain-English *description* the agent
+reads when deciding *when* to reach for an action — the function is the hands, the description
+tells the agent what they're for.
 
 ```sql
 CREATE TOOL `flag_transaction_tool`
@@ -192,10 +199,12 @@ WITH (
 );
 ```
 
-### 2.8 Create the agent
+## 4. Assemble the fraud analyst — create the agent
 
-The agent binds the model + the three tools + a hardened prompt that scores each profile and
-decides which tools to call.
+Now combine the brain, the hands, and a **job description**. The prompt is where the use-case
+logic lives: it tells the agent how to score risk from 0–100, which tools to call at each score
+band (freeze + notify when risk is high, flag + notify when medium, and so on), and to return a
+single strict-JSON verdict you can store. Read the prompt below — it *is* the fraud policy.
 
 ```sql
 CREATE AGENT `fraud_detection_agent`
@@ -244,7 +253,14 @@ WITH (
 );
 ```
 
-### 2.9 Build the activity profiles (windowing)
+## 5. Build each user's activity profile — turn events into a story
+
+The agent reasons about *one user's recent behavior*, but events arrive as three separate raw
+streams (transactions, logins, account changes). This statement stitches them together: for each
+user it gathers a short burst of activity into a single, human-readable profile — exactly what
+you'd hand a human analyst. A **session window** groups events that happen close together and
+closes when the user goes quiet, so a fraud burst is never split in two. This statement runs
+**continuously** (it stays **RUNNING**).
 
 > [!IMPORTANT]
 > **Run the `SET` first, in the same workspace session, before the `CREATE TABLE`.** It pins
@@ -293,10 +309,13 @@ FROM TABLE(
 GROUP BY `user_id`, `window_start`, `window_end`;
 ```
 
-### 2.10 Run the detection query
+## 6. Detect fraud in real time — put the analyst to work
 
-Runs the agent over each profile and parses its JSON verdict into the `fraud_alerts` table.
-This is the statement that actually calls Bedrock — it stays **RUNNING**.
+This is the payoff. For **every** activity profile that appears, this statement calls the agent,
+lets it score and act, and writes the verdict — risk score, reasoning, actions taken, and
+flagged transaction ids — into the `fraud_alerts` table. It runs **continuously**: each new
+burst of user activity is analyzed within seconds. This is also the statement that actually
+calls Bedrock, so leave it **RUNNING**.
 
 ```sql
 INSERT INTO `fraud_alerts`
@@ -318,7 +337,7 @@ SELECT
 FROM `scored`;
 ```
 
-## 3. Run the producer and dashboard (~8–12 min)
+## 7. Run the producer and dashboard (~8–12 min)
 
 From the repo root, in two terminals (activate the venv in each):
 
@@ -339,7 +358,7 @@ SELECT * FROM activity_profiles;                     -- one row per user per ses
 SELECT * FROM fraud_alerts WHERE risk_score >= 70;   -- the high-risk verdicts
 ```
 
-## 4. Cleanup
+## 8. Cleanup
 
 ```bash
 cd terraform && terraform destroy -var-file=workshop.tfvars
