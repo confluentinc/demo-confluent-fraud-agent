@@ -3,7 +3,8 @@
 In this workshop you deploy the Confluent Cloud infrastructure with Terraform, then build the
 **real-time fraud detection AI pipeline yourself**.
 
-**Time:** ~1 hour of hands-on work — *if* the prerequisites below are done in advance.
+> [!NOTE]
+> **Time:** ~1 hour of hands-on work — *if* the prerequisites below are done in advance.
 
 ## 0. Prerequisites
 
