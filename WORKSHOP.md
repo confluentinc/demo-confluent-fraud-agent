@@ -251,8 +251,9 @@ logic lives: it tells the agent how to score risk from 0–100, which tools to c
 band (freeze + notify when risk is high, flag + notify when medium, and so on), and to return a
 single strict-JSON verdict you can store. Read the prompt below — it *is* the fraud policy.
 
-> [!NOTE]
-> **Your turn.** Fill in the `<model-name>` the agent runs on.
+### 🎯 Challenge: Give the agent its model
+
+**Your turn.** Fill in the `<model-name>` the agent runs on.
 
 ```sql
 CREATE AGENT `fraud_detection_agent`
