@@ -386,7 +386,15 @@ python3 -m venv venv && source venv/bin/activate && pip install -r requirements.
 python producer/generate_events.py
 ```
 
-**3. Add another terminal and start the dashboard** (activate the venv there first):
+**3. Confirm events are flowing** — back in the Flink UI, query the input topics:
+
+```sql
+SELECT * FROM transactions LIMIT 5;
+SELECT * FROM user_logins LIMIT 5;
+SELECT * FROM account_changes LIMIT 5;
+```
+
+**4. Add another terminal and start the dashboard** (activate the venv there first):
 
 ```bash
 source venv/bin/activate
