@@ -198,11 +198,6 @@ profile. A **session window** groups events that happen close together and close
 goes quiet, so a fraud burst is never split in two. This statement runs **continuously** (it
 stays **RUNNING**).
 
-> [!IMPORTANT]
-> The two `SET`s in the block below matter:
-> - **`idle-timeout = '5 s'`** keeps the session-window watermark advancing — without it alerts start, then dry up.
-> - **`startup.mode = 'latest-offset'`** reads only new events. Everyone shares one Bedrock account, so replaying topic history would spike the shared quota.
-
 This unions the three input streams and collects each user's activity into a 3-second
 event-time SESSION window — one profile per activity burst. It is materialized as its own
 `activity_profiles` table so you can query it and see it in Stream Lineage. Run the whole block
@@ -243,6 +238,11 @@ FROM TABLE(
 )
 GROUP BY `user_id`, `window_start`, `window_end`;
 ```
+
+> [!IMPORTANT]
+> The two `SET`s in the block above matter:
+> - **`idle-timeout = '5 s'`** keeps the session-window watermark advancing — without it alerts start, then dry up.
+> - **`startup.mode = 'latest-offset'`** reads only new events. Everyone shares one Bedrock account, so replaying topic history would spike the shared quota.
 
 ## 5. Assemble the fraud analyst — create the agent
 
