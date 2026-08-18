@@ -353,19 +353,38 @@ FROM `scored`;
 > [!NOTE]
 > This is a continuous statement — keep this cell **RUNNING** for the whole workshop.
 
-## 7. Run the producer and dashboard (~8–12 min)
+## 7. Generate activity and watch alerts (~8–12 min)
 
-From the repo root, in two terminals (activate the venv in each):
+Your pipeline is live but idle — no events are flowing yet. Now you'll simulate customer
+activity and watch the agent score it in real time. Two local apps do this, both reading the
+`.env` Terraform already wrote (no config needed):
+
+- the **producer** — stands in for your customers, streaming synthetic transactions, logins,
+  and account changes (~80% normal, ~20% fraud) into your topics;
+- the **dashboard** — the fraud analyst's screen, showing the agent's alerts as they land.
+
+**1. Install dependencies** (once, from the repo root):
 
 ```bash
 python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
-python producer/generate_events.py          # terminal 1
-streamlit run dashboard/app.py              # terminal 2 -> http://localhost:8501
 ```
 
-The producer and dashboard use the `.env` Terraform already wrote. The dashboard reads from
-`latest`, so keep the producer running and allow ~1–2 minutes for the first window-firing
-batch of alerts.
+**2. Start the producer** in this terminal:
+
+```bash
+python producer/generate_events.py
+```
+
+**3. Start the dashboard** in a **second** terminal (activate the venv there first):
+
+```bash
+source venv/bin/activate
+streamlit run dashboard/app.py   # open http://localhost:8501
+```
+
+Give it ~1–2 minutes: as each user's activity burst closes its session window, the agent scores
+it and high-risk cases surface as alerts. Keep the producer running — the dashboard shows alerts
+generated from here on.
 
 You can also watch the two stages directly in the workspace:
 
