@@ -94,7 +94,7 @@ you'll paste into `workshop.tfvars`.
 4. Deploy:
 
    ```bash
-   terraform init && terraform apply -var-file=workshop.tfvars
+   terraform init && terraform apply -var-file=workshop.tfvars -auto-approve
    ```
 
 This provisions the environment, Kafka cluster, Schema Registry, Flink compute pool, the
