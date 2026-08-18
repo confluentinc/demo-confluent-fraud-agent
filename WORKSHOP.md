@@ -390,7 +390,13 @@ python producer/generate_events.py
 
 ```sql
 SELECT * FROM transactions LIMIT 5;
+```
+
+```sql
 SELECT * FROM user_logins LIMIT 5;
+```
+
+```sql
 SELECT * FROM account_changes LIMIT 5;
 ```
 
