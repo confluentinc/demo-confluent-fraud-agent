@@ -63,22 +63,19 @@ you typically won't be charged during the workshop.
 Terraform authenticates with an **org-level "Cloud resource management" API key**. This is what
 you'll paste into `workshop.tfvars`.
 
-1. Go directly to **[API keys](https://confluent.cloud/settings/api-keys)**.
-2. Click **+ Add API key**.
-3. For the account scope, select the **My account** tile (simplest for a workshop), then click
-   **Next**.
+1. Go directly to **[API keys](https://confluent.cloud/settings/api-keys)** and click **+ Add API key**.
+2. On the **Create API key** form: enter a **Name** (e.g. `Workshop`), select **My account**, and
+   set **Select key scope** to **Cloud resource management**.
+
+![Create API key — My account + Cloud resource management](images/workshop/0_step3_1.png)
 
 > [!NOTE]
 > A service account works too, but then you must grant it the OrganizationAdmin role
 > separately — "My account" already has your permissions.
-4. For the resource scope, select **Cloud resource management**, then click **Next**. This makes
-   it an org-wide key that can manage environments, clusters, Flink, and Schema Registry — which
-   is what Terraform needs.
-5. Give the key a **name** (e.g. `fraud-workshop-terraform`) and an optional description, then
-   click **Create API key**.
-6. **Copy both the Key and the Secret now and store them safely** — the secret is shown **only
-   once**. You can also click **Download** to save them as a file. These two values are your
-   `confluent_cloud_api_key` and `confluent_cloud_api_secret` in `workshop.tfvars`.
+
+3. Click **Create API key**, then **copy the Key and Secret** (the secret is shown **only once**,
+   or click **Download**). These are your `confluent_cloud_api_key` and `confluent_cloud_api_secret`
+   in `workshop.tfvars`.
 
 > Reference: Confluent docs —
 > [Manage API keys](https://docs.confluent.io/cloud/current/security/authenticate/workload-identities/service-accounts/api-keys/manage-api-keys.html),
