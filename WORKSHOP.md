@@ -33,15 +33,13 @@ These are **not** part of the timed hour. Complete them before the workshop:
    (or **[confluent.cloud/signup](https://confluent.cloud/signup)**).
 2. Enter your **name**, **work email**, **company**, and a **password**, then accept the terms
    and click **Start Free**.
-3. On first sign-in, Confluent shows a short **onboarding wizard** (a few questions about your
-   use case) and then offers to **create your first cluster**.
-   > **Skip the cluster creation.** Do **not** click **Add cluster** / **Create cluster** — this
-   > workshop's Terraform creates its own environment *and* cluster (`fraud-agent-env-…` /
-   > `fraud-agent-cluster-…`) for you. If the wizard drops you on a "Create cluster" page, just
-   > leave it: click the Confluent logo (top-left) or navigate to **Environments** to exit. Your
-   > account already has a **`default`** environment; you don't need to create anything here.
-   > (If you *do* accidentally create a cluster, it won't break anything — Terraform uses a
-   > separate environment — but you can delete it later to avoid charges.)
+3. On first sign-in, an **onboarding wizard** asks a few questions, then offers to create your
+   first cluster.
+
+> [!WARNING]
+> **Do NOT create a cluster.** Skip the **Add cluster** / **Create cluster** step — Terraform
+> creates its own environment *and* cluster for you. Click the Confluent logo (top-left) to
+> exit the wizard.
 
 #### Step 2 — Add a payment method (credit card)
 
