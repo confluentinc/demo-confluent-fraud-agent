@@ -370,7 +370,7 @@ python3 -m venv venv && source venv/bin/activate && pip install -r requirements.
 python producer/generate_events.py
 ```
 
-**3. Start the dashboard** in a **second** terminal (activate the venv there first):
+**3. Add another terminal and start the dashboard** (activate the venv there first):
 
 ```bash
 source venv/bin/activate
