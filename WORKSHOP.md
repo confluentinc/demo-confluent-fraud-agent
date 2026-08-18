@@ -197,7 +197,63 @@ WITH (
 );
 ```
 
-## 4. Assemble the fraud analyst — create the agent
+## 4. Build each user's activity profile — turn events into a story
+
+A fraud analyst needs one user's recent behavior in a single view, but events arrive as three
+separate raw streams (transactions, logins, account changes). This statement stitches them
+together: for each user it gathers a short burst of activity into a single, human-readable
+profile. A **session window** groups events that happen close together and closes when the user
+goes quiet, so a fraud burst is never split in two. This statement runs **continuously** (it
+stays **RUNNING**).
+
+> [!IMPORTANT]
+> Run both `SET`s below **before** the `CREATE TABLE`, in the same session.
+> - **`idle-timeout = '5 s'`** keeps the session-window watermark advancing — without it alerts start, then dry up.
+> - **`startup.mode = 'latest-offset'`** reads only new events. Everyone shares one Bedrock account, so replaying topic history would spike the shared quota.
+
+```sql
+SET 'client.statement-name' = 'create-activity-profiles';
+SET 'sql.tables.scan.idle-timeout' = '5 s';
+SET 'sql.tables.scan.startup.mode' = 'latest-offset';
+```
+
+This unions the three input streams and collects each user's activity into a 3-second
+event-time SESSION window — one profile per activity burst. It is materialized as its own
+`activity_profiles` table so you can query it and see it in Stream Lineage.
+
+```sql
+CREATE TABLE `activity_profiles` AS
+WITH `unified` AS (
+  SELECT `user_id`, 'transaction' AS `event_type`, `event_time`,
+         CONCAT('- txn ', `transaction_id`, ': $', CAST(`amount` AS STRING),
+                ' at ', `merchant`, ' (', `merchant_category`, ') in ', `location`) AS `line`
+  FROM `transactions`
+  UNION ALL
+  SELECT `user_id`, 'login' AS `event_type`, `event_time`,
+         CONCAT('- login from ', `location`, ' via ', `device_id`, ' (ip ', `ip_address`, ')') AS `line`
+  FROM `user_logins`
+  UNION ALL
+  SELECT `user_id`, 'account_change' AS `event_type`, `event_time`,
+         CONCAT('- ', `field_changed`, ' changed from "', `old_value`, '" to "', `new_value`, '"') AS `line`
+  FROM `account_changes`
+)
+SELECT
+  `user_id`,
+  `window_start`,
+  `window_end`,
+  CONCAT(
+    'User: ', `user_id`, '\n\n',
+    'Transactions:\n', COALESCE(LISTAGG(CASE WHEN `event_type` = 'transaction' THEN `line` END, '\n'), '  (none)'), '\n\n',
+    'Logins:\n', COALESCE(LISTAGG(CASE WHEN `event_type` = 'login' THEN `line` END, '\n'), '  (none)'), '\n\n',
+    'Account changes:\n', COALESCE(LISTAGG(CASE WHEN `event_type` = 'account_change' THEN `line` END, '\n'), '  (none)')
+  ) AS `profile_text`
+FROM TABLE(
+  SESSION(TABLE `unified` PARTITION BY `user_id`, DESCRIPTOR(`event_time`), INTERVAL '3' SECONDS)
+)
+GROUP BY `user_id`, `window_start`, `window_end`;
+```
+
+## 5. Assemble the fraud analyst — create the agent
 
 Now combine the brain, the hands, and a **job description**. The prompt is where the use-case
 logic lives: it tells the agent how to score risk from 0–100, which tools to call at each score
@@ -251,61 +307,8 @@ WITH (
 );
 ```
 
-## 5. Build each user's activity profile — turn events into a story
-
-The agent reasons about *one user's recent behavior*, but events arrive as three separate raw
-streams (transactions, logins, account changes). This statement stitches them together: for each
-user it gathers a short burst of activity into a single, human-readable profile — exactly what
-you'd hand a human analyst. A **session window** groups events that happen close together and
-closes when the user goes quiet, so a fraud burst is never split in two. This statement runs
-**continuously** (it stays **RUNNING**).
-
-> [!IMPORTANT]
-> Run both `SET`s below **before** the `CREATE TABLE`, in the same session.
-> - **`idle-timeout = '5 s'`** keeps the session-window watermark advancing — without it alerts start, then dry up.
-> - **`startup.mode = 'latest-offset'`** reads only new events. Everyone shares one Bedrock account, so replaying topic history would spike the shared quota.
-
-```sql
-SET 'client.statement-name' = 'create-activity-profiles';
-SET 'sql.tables.scan.idle-timeout' = '5 s';
-SET 'sql.tables.scan.startup.mode' = 'latest-offset';
-```
-
-This unions the three input streams and collects each user's activity into a 3-second
-event-time SESSION window — one profile per activity burst. It is materialized as its own
-`activity_profiles` table so you can query it and see it in Stream Lineage.
-
-```sql
-CREATE TABLE `activity_profiles` AS
-WITH `unified` AS (
-  SELECT `user_id`, 'transaction' AS `event_type`, `event_time`,
-         CONCAT('- txn ', `transaction_id`, ': $', CAST(`amount` AS STRING),
-                ' at ', `merchant`, ' (', `merchant_category`, ') in ', `location`) AS `line`
-  FROM `transactions`
-  UNION ALL
-  SELECT `user_id`, 'login' AS `event_type`, `event_time`,
-         CONCAT('- login from ', `location`, ' via ', `device_id`, ' (ip ', `ip_address`, ')') AS `line`
-  FROM `user_logins`
-  UNION ALL
-  SELECT `user_id`, 'account_change' AS `event_type`, `event_time`,
-         CONCAT('- ', `field_changed`, ' changed from "', `old_value`, '" to "', `new_value`, '"') AS `line`
-  FROM `account_changes`
-)
-SELECT
-  `user_id`,
-  `window_start`,
-  `window_end`,
-  CONCAT(
-    'User: ', `user_id`, '\n\n',
-    'Transactions:\n', COALESCE(LISTAGG(CASE WHEN `event_type` = 'transaction' THEN `line` END, '\n'), '  (none)'), '\n\n',
-    'Logins:\n', COALESCE(LISTAGG(CASE WHEN `event_type` = 'login' THEN `line` END, '\n'), '  (none)'), '\n\n',
-    'Account changes:\n', COALESCE(LISTAGG(CASE WHEN `event_type` = 'account_change' THEN `line` END, '\n'), '  (none)')
-  ) AS `profile_text`
-FROM TABLE(
-  SESSION(TABLE `unified` PARTITION BY `user_id`, DESCRIPTOR(`event_time`), INTERVAL '3' SECONDS)
-)
-GROUP BY `user_id`, `window_start`, `window_end`;
-```
+The agent is now **created but not running** — nothing calls it yet. In the next step we put it
+to work.
 
 ## 6. Detect fraud in real time — put the analyst to work
 
