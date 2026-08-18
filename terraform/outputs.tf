@@ -37,3 +37,13 @@ output "dotenv_path" {
   value       = local_file.dotenv.filename
   description = "Path to the generated .env consumed by the producer and dashboard"
 }
+
+output "flink_catalog" {
+  value       = confluent_environment.main.display_name
+  description = "Flink catalog to select in the workspace (environment display name)"
+}
+
+output "flink_database" {
+  value       = confluent_kafka_cluster.standard.display_name
+  description = "Flink database to select in the workspace (cluster display name)"
+}

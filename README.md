@@ -33,7 +33,7 @@ Everything except the producer and dashboard runs in Confluent Cloud — there i
 </tr>
 </table>
 
-![Stream Lineage — end-to-end pipeline](images/demo/17-recap-lineage.png)
+![Architecture — end-to-end pipeline](images/Architecture.png)
 
 ## Prerequisites
 
@@ -77,82 +77,31 @@ winget install Docker.DockerDesktop
 ```
 </details>
 
-## 🚀 Quick Start
+## Choose your path
 
-**1. Clone the repository:**
+This repo can be run two ways. Both start from the same [Prerequisites](#prerequisites) above.
 
-```bash
-git clone https://github.com/confluentinc/demo-confluent-fraud-agent.git && cd demo-confluent-fraud-agent
-```
+| Path | What you do | Time | Guide |
+|------|-------------|------|-------|
+| **🎬 Demo** | One `terraform apply` deploys **everything** — infra *and* the full Flink AI pipeline. You just run the producer and dashboard. | ~15 min | **[DEMO.md](DEMO.md)** |
+| **🛠️ Self-service workshop** | Terraform deploys infra + the 4 tables; **you build the AI pipeline by hand** in the Flink UI (model → functions → tools → agent → windowing → detection). | ~1 hour | **[WORKSHOP.md](WORKSHOP.md)** |
 
-**2. Provide your four credentials:**
-
-```bash
-cd terraform
-cp terraform.tfvars.example terraform.tfvars
-# edit terraform.tfvars — Confluent Cloud key/secret + AWS Bedrock IAM key/secret
-```
-
-These four values are the **only** inputs. Region (`us-east-1`), the Claude model, resource names, and sizing are all preset.
-
-**3. One-command deployment:**
-
-```bash
-terraform init && terraform apply
-```
-
-This provisions everything — environment, Kafka cluster, Schema Registry, Flink compute pool, the Bedrock connection, the model, the UDF tools (JAR upload + functions + tools), the agent, and the detection query — and writes a ready-to-use `.env` for the local apps.
-
-**4. Install the Python dependencies:**
-
-<details open>
-<summary>macOS / Linux</summary>
-
-```bash
-cd .. && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
-```
-</details>
-
-<details>
-<summary>Windows (PowerShell)</summary>
-
-```powershell
-cd .. ; python -m venv venv ; venv\Scripts\Activate.ps1 ; pip install -r requirements.txt
-```
-</details>
-
-**5. Start the producer** — in one terminal, generate events:
-
-```bash
-python producer/generate_events.py
-```
-
-**6. Start the dashboard** — in a **second** terminal, launch the UI at http://localhost:8501:
-
-```bash
-streamlit run dashboard/app.py
-```
-
-> Activate the virtual environment in each new terminal first (`source venv/bin/activate`, or `venv\Scripts\Activate.ps1` on Windows).
-
-That's it! Watch fraud alerts appear in real time — the injected scenarios surface as high-risk alerts (scores ~75–95) with `freeze_account` / `flag_transaction` actions and the flagged transaction ids.
-
-> [!NOTE]
-> The dashboard reads from `latest`, so keep the producer running and allow ~1 minute for the first window-firing batch of alerts. You can also inspect the running statements and tables in the [Flink workspace](https://confluent.cloud/go/flink).
-
-## 🎬 Demo walkthrough
-
-Deployed and running? Follow the **[guided demo walkthrough → `demo.md`](demo.md)** — a ~15-minute, screenshot-by-screenshot script that traces the pipeline through **Stream Lineage** (source topics → the Flink Streaming Agent with union, tools & AI agent → the alerts topic) and finishes on the live dashboard.
+**New here or short on time?** Take the [Demo path](DEMO.md). **Want to learn how Streaming
+Agents are built, statement by statement?** Take the [Workshop path](WORKSHOP.md).
 
 ## Directory Structure
 
 ```
 demo-confluent-fraud-agent/
-├── terraform/                       # One-step Confluent Cloud provisioning (start here)
+├── DEMO.md                          # Demo path — one-command deploy
+├── WORKSHOP.md                      # Self-service workshop — manual Flink SQL
+├── WALKTHROUGH.md                   # Guided post-deploy Stream Lineage tour
+├── terraform/                       # Confluent Cloud provisioning (start here)
 │   ├── main.tf                      # Env, cluster, SR, compute pool, service account, keys, ACLs
 │   ├── flink.tf                     # Bedrock connection, tools artifact, and all Flink statements
 │   ├── connect.tf                   # Writes .env for the local apps
-│   ├── variables.tf                 # The 4 required inputs
+│   ├── variables.tf                 # The 4 required inputs (+ deploy_flink_pipeline flag)
+│   ├── workshop.tfvars.example      # Workshop-mode preset (deploy_flink_pipeline = false)
 │   └── modules/flink-statement/     # Reusable confluent_flink_statement wrapper
 ├── tools-udf/                       # Java UDF tools (flag/freeze/notify) + pre-built JAR
 ├── producer/generate_events.py      # Synthetic event generator

@@ -27,3 +27,9 @@ variable "aws_secret_access_key" {
   type        = string
   sensitive   = true
 }
+
+variable "deploy_flink_pipeline" {
+  description = "Deploy the hands-on Flink AI pipeline statements (model, tools, agent, windowing, detection). true = the one-command demo. Set false for the self-service workshop, where participants run these statements by hand in the Flink UI (see WORKSHOP.md). The 3 CREATE FUNCTION statements are always deployed (they reference the uploaded JAR artifact id), so participants never handle that id."
+  type        = bool
+  default     = true
+}

@@ -173,6 +173,7 @@ module "tbl_fraud_alerts" {
 # ------------------------------- Model -------------------------------------
 module "model" {
   source           = "./modules/flink-statement"
+  count            = var.deploy_flink_pipeline ? 1 : 0
   organization_id  = local.flink_common.organization_id
   environment_id   = local.flink_common.environment_id
   compute_pool_id  = local.flink_common.compute_pool_id
@@ -261,6 +262,7 @@ module "fn_notify" {
 # --------------------------------- Tools -----------------------------------
 module "tool_flag" {
   source           = "./modules/flink-statement"
+  count            = var.deploy_flink_pipeline ? 1 : 0
   organization_id  = local.flink_common.organization_id
   environment_id   = local.flink_common.environment_id
   compute_pool_id  = local.flink_common.compute_pool_id
@@ -284,6 +286,7 @@ module "tool_flag" {
 
 module "tool_freeze" {
   source           = "./modules/flink-statement"
+  count            = var.deploy_flink_pipeline ? 1 : 0
   organization_id  = local.flink_common.organization_id
   environment_id   = local.flink_common.environment_id
   compute_pool_id  = local.flink_common.compute_pool_id
@@ -307,6 +310,7 @@ module "tool_freeze" {
 
 module "tool_notify" {
   source           = "./modules/flink-statement"
+  count            = var.deploy_flink_pipeline ? 1 : 0
   organization_id  = local.flink_common.organization_id
   environment_id   = local.flink_common.environment_id
   compute_pool_id  = local.flink_common.compute_pool_id
@@ -331,6 +335,7 @@ module "tool_notify" {
 # --------------------------------- Agent -----------------------------------
 module "agent" {
   source           = "./modules/flink-statement"
+  count            = var.deploy_flink_pipeline ? 1 : 0
   organization_id  = local.flink_common.organization_id
   environment_id   = local.flink_common.environment_id
   compute_pool_id  = local.flink_common.compute_pool_id
@@ -403,6 +408,7 @@ module "agent" {
 # Lineage between the source topics and the agent.
 module "profiles" {
   source           = "./modules/flink-statement"
+  count            = var.deploy_flink_pipeline ? 1 : 0
   organization_id  = local.flink_common.organization_id
   environment_id   = local.flink_common.environment_id
   compute_pool_id  = local.flink_common.compute_pool_id
@@ -464,6 +470,7 @@ module "profiles" {
 # parses the agent's JSON verdict into the fraud_alerts columns.
 module "detect" {
   source           = "./modules/flink-statement"
+  count            = var.deploy_flink_pipeline ? 1 : 0
   organization_id  = local.flink_common.organization_id
   environment_id   = local.flink_common.environment_id
   compute_pool_id  = local.flink_common.compute_pool_id

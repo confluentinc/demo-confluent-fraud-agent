@@ -1,0 +1,12 @@
+# Workshop mode preset. Copy to workshop.tfvars, fill in your 4 credentials, then:
+#   terraform init && terraform apply -var-file=workshop.tfvars
+# This provisions infrastructure + the 4 tables + the Bedrock connection + the tools JAR,
+# but NOT the AI pipeline statements — participants create those by hand in the Flink UI
+# (model, functions, tools, agent, windowing, detection). See ../WORKSHOP.md.
+
+confluent_cloud_api_key    = "<your-confluent-cloud-api-key>"
+confluent_cloud_api_secret = "<your-confluent-cloud-api-secret>"
+aws_access_key_id          = "<your-aws-access-key-id>"
+aws_secret_access_key      = "<your-aws-secret-access-key>"
+
+deploy_flink_pipeline = false

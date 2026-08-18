@@ -38,13 +38,17 @@ a node in Stream Lineage). All Flink/agent/model/tool SQL is defined inline in
 | `terraform/main.tf` | Env, cluster, Schema Registry, compute pool, service account, API keys, ACLs, and all fixed `locals` (region, model id, names). |
 | `terraform/flink.tf` | Bedrock connection, tools artifact upload, and every Flink statement: source tables, `CREATE MODEL`, `CREATE FUNCTION`/`CREATE TOOL` ×3, `CREATE AGENT`, the `create-activity-profiles` windowing statement (`module.profiles`), and the `detect-fraud` agent `INSERT` (`module.detect`). |
 | `terraform/connect.tf` | Writes the repo-root `.env` consumed by the local apps. |
-| `terraform/variables.tf` | The **4** required inputs (Confluent key/secret, AWS Bedrock IAM key/secret). |
+| `terraform/variables.tf` | The **4** required inputs (Confluent key/secret, AWS Bedrock IAM key/secret) + the `deploy_flink_pipeline` mode flag (default `true`). |
+| `terraform/workshop.tfvars.example` | Workshop-mode preset (`deploy_flink_pipeline = false`); copy to `workshop.tfvars` and `apply -var-file=`. |
 | `terraform/modules/flink-statement/` | Thin reusable wrapper around `confluent_flink_statement`. |
 | `tools-udf/` | Java UDF tools (`flag_transaction`, `freeze_account`, `notify_user`) + the committed `target/fraud-tools.jar`. |
 | `producer/generate_events.py` | Synthetic event generator (Avro + SASL_SSL). |
 | `dashboard/app.py` | Streamlit dashboard (Avro + SASL_SSL); Recent Fraud Alerts table shows severity/user/score/time/reasoning/**actions**. |
 | `agent/models.py` | Pydantic data-model reference only — not imported at runtime. |
-| `demo.md` | ~15-min presenter walkthrough (Stream Lineage → Flink job → dashboard); screenshots in `images/demo/`. Linked from the README. |
+| `README.md` | Landing page: use-case + architecture + shared prerequisites, then "Choose your path" linking to `DEMO.md` / `WORKSHOP.md`. |
+| `DEMO.md` | Demo path: one-command `terraform apply` deploy steps; links to `WALKTHROUGH.md`. |
+| `WORKSHOP.md` | Self-service workshop path: deploy infra + tables + functions via `deploy_flink_pipeline=false`, then run the hands-on statements (model, tools, agent, windowing, detect) by hand in the Flink UI. Inline SQL must match `flink.tf`. |
+| `WALKTHROUGH.md` | ~15-min presenter walkthrough (Stream Lineage → Flink job → dashboard); screenshots in `images/demo/`. Linked from `DEMO.md`. |
 
 ## Commands
 
@@ -71,6 +75,30 @@ cd tools-udf && ./build.sh    # then commit target/fraud-tools.jar
 
 - **4 inputs only.** Region (`us-east-1`), Claude model, resource names, and sizing are
   fixed in `terraform/main.tf` `locals`. Don't add user-facing variables without reason.
+  (The one exception is the `deploy_flink_pipeline` mode flag below.)
+- **Two deployment paths via `deploy_flink_pipeline`.** Default `true` = the one-command
+  demo (deploys everything). `false` (see `terraform/workshop.tfvars.example`) = workshop
+  mode: Terraform deploys infra + the Bedrock connection + tools JAR + the 4 tables **+ the 3
+  `CREATE FUNCTION` statements** (`fn_*`, ungated — they reference the artifact id, so we don't
+  make participants handle it). The 7 hands-on modules (`model`, `tool_*`, `agent`, `profiles`,
+  `detect`) are gated off with `count` so participants run them by hand from the Flink UI per
+  `WORKSHOP.md`.
+- **Keep `WORKSHOP.md` SQL in sync with `flink.tf`.** `WORKSHOP.md` embeds copies of the
+  hands-on statements for participants to paste (model, the 3 tools, agent, windowing, detect —
+  **not** the functions, which Terraform creates). When you change one of those in `flink.tf`,
+  update the matching block in `WORKSHOP.md`. Note: only `flag_transaction_tool` is shown in
+  full; `freeze_account_tool` / `notify_user_tool` are a "your turn" challenge shown with the
+  `USING FUNCTION` name replaced by a `<function-name>` placeholder (a `<details>` hint points
+  participants at `SHOW USER FUNCTIONS`). Likewise the agent's `USING MODEL` is a `<model-name>`
+  placeholder challenge (hint: `SHOW MODELS`), and the detect `INSERT`'s `AI_RUN_AGENT(...)` uses
+  an `<agent-name>` placeholder challenge (hint: `SHOW AGENTS`). The intended differences from `flink.tf`: (a) the windowing
+  statement is preceded by `SET 'sql.tables.scan.idle-timeout' = '5 s';` (in `flink.tf` that
+  lives in `module.profiles`'s `extra_properties`); (b) the windowing statement is also preceded
+  by `SET 'sql.tables.scan.startup.mode' = 'latest-offset';` — **workshop only** (demo
+  intentionally reprocesses from earliest); and (c) both continuous statements carry a
+  `SET 'client.statement-name' = '…';`. Latest-offset keeps each participant's agent calls
+  proportional to live traffic instead of replaying topic history through the shared Bedrock
+  account.
 - **Bedrock model id lives in the connection endpoint URL** (`local.bedrock_model_id` →
   `local.bedrock_endpoint`), NOT in `CREATE MODEL`. Change that one line to switch models.
 - **Topic = Flink table name**, snake_case: `transactions`, `user_logins`,
