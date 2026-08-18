@@ -116,19 +116,13 @@ terraform output flink_catalog       # -> the workspace Catalog to select
 terraform output flink_database      # -> the workspace Database to select
 ```
 
-## 2. Open the Flink workspace and set your context
-
-Open the [Flink workspace](https://confluent.cloud/go/flink). Set the **Catalog** to your
-`flink_catalog` value and the **Database** to your `flink_database` value. All the statements
-below use unqualified names, so this context must be set first.
-
-## 3. Build the pipeline — run these statements in order (~15–25 min)
+## 2. Build the pipeline — run these statements in order (~15–25 min)
 
 Run each statement below in the workspace, one at a time, waiting for each to finish before
-the next. Statements 3.1–3.8 are DDL and reach **COMPLETED** in a few seconds; statements 3.9
-and 3.10 are continuous and go **RUNNING**.
+the next. Statements 2.1–2.8 are DDL and reach **COMPLETED** in a few seconds; statements 2.9
+and 2.10 are continuous and go **RUNNING**.
 
-### 3.1 Register the model
+### 2.1 Register the model
 
 Wires up the Bedrock Claude model behind a callable name.
 
@@ -144,7 +138,7 @@ WITH (
 );
 ```
 
-### 3.2–3.4 Create the three function tools
+### 2.2–2.4 Create the three function tools
 
 These map the pre-uploaded UDF JAR classes to Flink functions. **Replace
 `<TOOLS_ARTIFACT_ID>` in all three with your `tools_artifact_id` output.**
@@ -167,7 +161,7 @@ AS 'io.confluent.frauddemo.NotifyUser'
 USING JAR 'confluent-artifact://<TOOLS_ARTIFACT_ID>';
 ```
 
-### 3.5–3.7 Wrap the functions as agent tools
+### 2.5–2.7 Wrap the functions as agent tools
 
 Tools give the agent a name + description it can reason about when deciding to act.
 
@@ -198,7 +192,7 @@ WITH (
 );
 ```
 
-### 3.8 Create the agent
+### 2.8 Create the agent
 
 The agent binds the model + the three tools + a hardened prompt that scores each profile and
 decides which tools to call.
@@ -250,7 +244,7 @@ WITH (
 );
 ```
 
-### 3.9 Build the activity profiles (windowing)
+### 2.9 Build the activity profiles (windowing)
 
 > [!IMPORTANT]
 > **Run the `SET` first, in the same workspace session, before the `CREATE TABLE`.** It pins
@@ -299,7 +293,7 @@ FROM TABLE(
 GROUP BY `user_id`, `window_start`, `window_end`;
 ```
 
-### 3.10 Run the detection query
+### 2.10 Run the detection query
 
 Runs the agent over each profile and parses its JSON verdict into the `fraud_alerts` table.
 This is the statement that actually calls Bedrock — it stays **RUNNING**.
@@ -324,7 +318,7 @@ SELECT
 FROM `scored`;
 ```
 
-## 4. Run the producer and dashboard (~8–12 min)
+## 3. Run the producer and dashboard (~8–12 min)
 
 From the repo root, in two terminals (activate the venv in each):
 
@@ -345,7 +339,7 @@ SELECT * FROM activity_profiles;                     -- one row per user per ses
 SELECT * FROM fraud_alerts WHERE risk_score >= 70;   -- the high-risk verdicts
 ```
 
-## 5. Cleanup
+## 4. Cleanup
 
 ```bash
 cd terraform && terraform destroy -var-file=workshop.tfvars
