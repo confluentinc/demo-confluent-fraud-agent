@@ -257,9 +257,12 @@ logic lives: it tells the agent how to score risk from 0–100, which tools to c
 band (freeze + notify when risk is high, flag + notify when medium, and so on), and to return a
 single strict-JSON verdict you can store. Read the prompt below — it *is* the fraud policy.
 
+> [!NOTE]
+> **Your turn.** Fill in the `<model-name>` the agent runs on.
+
 ```sql
 CREATE AGENT `fraud_detection_agent`
-USING MODEL `fraud_model`
+USING MODEL `<model-name>`
 USING PROMPT 'You are a real-time fraud detection analyst.
 
 You receive a plain-text activity profile for ONE user over a short time window. It lists
@@ -303,6 +306,16 @@ WITH (
   'max_consecutive_failures' = '5'
 );
 ```
+
+<details>
+<summary>Hint — how do I find the model name?</summary>
+
+You created the model in section 2. List your models with:
+
+```sql
+SHOW MODELS;
+```
+</details>
 
 The agent is now **created but not running** — nothing calls it yet. In the next step we put it
 to work.
