@@ -46,6 +46,10 @@ These are **not** part of the timed hour. Complete them before the workshop:
 A card is required for Terraform to create a **Standard** cluster. Free credit is used first, so
 you typically won't be charged during the workshop.
 
+> [!TIP]
+> All new sign-ups get **$400 in free credit** to use within the first 30 days — deploying this
+> workshop will not get you charged.
+
 1. In the Confluent Cloud Console, click the **hamburger menu (☰)** in the top-right, then
    **Administration → Billing & payment** (or go directly to
    **[confluent.cloud/settings/billing/payment](https://confluent.cloud/settings/billing/payment)**).
