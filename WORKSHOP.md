@@ -19,7 +19,7 @@ These are **not** part of the timed hour. Complete them before the workshop:
 - [ ] **Tools installed:** [Terraform](https://github.com/hashicorp/terraform),
       [Git](https://git-scm.com/), [Python 3.11+](https://www.python.org/downloads/).
 
-### 1. Set up Confluent Cloud
+## 1. Set up Confluent Cloud
 
 #### Step 1 — Create your Confluent Cloud account
 
@@ -72,7 +72,7 @@ you'll paste into `workshop.tfvars`.
    or click **Download**). These are your `confluent_cloud_api_key` and `confluent_cloud_api_secret`
    in `workshop.tfvars`.
 
-## 1. Deploy the infrastructure (~8–12 min)
+## 2. Deploy the infrastructure (~8–12 min)
 
 1. Clone the repo and enter the `terraform` directory:
 
@@ -103,7 +103,7 @@ pipeline. It also writes a ready-to-use `.env` for the producer and dashboard.
 > [!NOTE]
 > `terraform apply` takes **~8–12 minutes** — provisioning the Kafka cluster is the slow part.
 
-## 2. Connect the model — give the agent a brain
+## 3. Connect the model — give the agent a brain
 
 Now we build the fraud-detection pipeline.
 
@@ -132,7 +132,7 @@ WITH (
 
 On its own the model just "thinks" — you'll give it actions and a job in the next sections.
 
-## 3. Define the actions — give the agent hands
+## 4. Define the actions — give the agent hands
 
 A fraud analyst that can only *think* isn't useful; it has to *act* — flag a suspicious
 transaction, freeze a compromised account, or warn the customer. That takes two layers: a
@@ -186,7 +186,7 @@ SHOW USER FUNCTIONS;
 ```
 </details>
 
-## 4. Build each user's activity profile — turn events into a story
+## 5. Build each user's activity profile — turn events into a story
 
 A fraud analyst needs one user's recent behavior in a single view, but events arrive as three
 separate raw streams (transactions, logins, account changes). This statement stitches them
@@ -244,7 +244,7 @@ GROUP BY `user_id`, `window_start`, `window_end`;
 > [!NOTE]
 > This is a continuous statement — keep this cell **RUNNING** for the whole workshop.
 
-## 5. Assemble the fraud analyst — create the agent
+## 6. Assemble the fraud analyst — create the agent
 
 Now combine the brain, the hands, and a **job description**. The prompt is where the use-case
 logic lives: it tells the agent how to score risk from 0–100, which tools to call at each score
@@ -305,7 +305,7 @@ WITH (
 <details>
 <summary>Hint — how do I find the model name?</summary>
 
-You created the model in section 2. List your models with:
+You created the model in section 3. List your models with:
 
 ```sql
 SHOW MODELS;
@@ -315,7 +315,7 @@ SHOW MODELS;
 The agent is now **created but not running** — nothing calls it yet. In the next step we put it
 to work.
 
-## 6. Detect fraud in real time — put the analyst to work
+## 7. Detect fraud in real time — put the analyst to work
 
 This is the payoff. For **every** activity profile that appears, this statement calls the agent,
 lets it score and act, and writes the verdict — risk score, reasoning, actions taken, and
@@ -348,7 +348,7 @@ FROM `scored`;
 > [!NOTE]
 > This is a continuous statement — keep this cell **RUNNING** for the whole workshop.
 
-## 7. Generate activity and watch alerts (~8–12 min)
+## 8. Generate activity and watch alerts (~8–12 min)
 
 Your pipeline is live but idle — no events are flowing yet. Now you'll simulate customer
 activity and watch the agent score it in real time. Two local apps do this, both reading the
@@ -388,7 +388,7 @@ SELECT * FROM activity_profiles;                     -- one row per user per ses
 SELECT * FROM fraud_alerts WHERE risk_score >= 70;   -- the high-risk verdicts
 ```
 
-## 8. Cleanup
+## 9. Cleanup
 
 ```bash
 cd terraform && terraform destroy -var-file=workshop.tfvars
