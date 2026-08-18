@@ -57,8 +57,6 @@ you typically won't be charged during the workshop.
 ![Payment details and contacts — Add credit card / bank account](images/workshop/0_step2_1.png)
 
 4. Enter your **card details**, then **Save**.
-   > You must have the **OrganizationAdmin** role to enter a payment method. If you created the
-   > account, you already are the OrganizationAdmin.
 
 #### Step 3 — Create a Cloud API key & secret
 
