@@ -77,10 +77,6 @@ you'll paste into `workshop.tfvars`.
    or click **Download**). These are your `confluent_cloud_api_key` and `confluent_cloud_api_secret`
    in `workshop.tfvars`.
 
-> Reference: Confluent docs —
-> [Manage API keys](https://docs.confluent.io/cloud/current/security/authenticate/workload-identities/service-accounts/api-keys/manage-api-keys.html),
-> [Manage payment methods](https://docs.confluent.io/cloud/current/billing/overview.html).
-
 ## 1. Deploy the infrastructure (~8–12 min)
 
 ```bash
