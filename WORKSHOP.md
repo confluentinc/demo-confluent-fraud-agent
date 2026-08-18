@@ -43,9 +43,8 @@ These are **not** part of the timed hour. Complete them before the workshop:
 
 #### Step 2 — Add a payment method (credit card)
 
-A card is required so Terraform can create a **Standard** cluster (Standard/Dedicated clusters
-are not covered by the free-trial-only tier). Free credit is consumed first, so you typically
-won't be charged during the workshop.
+A card is required for Terraform to create a **Standard** cluster. Free credit is used first, so
+you typically won't be charged during the workshop.
 
 1. In the Confluent Cloud Console, click the **hamburger menu (☰)** in the top-right, then
    **Administration → Billing & payment** (or go directly to
