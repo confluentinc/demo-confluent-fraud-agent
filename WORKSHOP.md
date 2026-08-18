@@ -60,8 +60,8 @@ you typically won't be charged during the workshop.
 
 #### Step 3 — Create a Cloud API key & secret
 
-Terraform authenticates with an **org-level "Cloud resource management" API key** (not a
-cluster-scoped key). This is what you'll paste into `workshop.tfvars`.
+Terraform authenticates with an **org-level "Cloud resource management" API key**. This is what
+you'll paste into `workshop.tfvars`.
 
 1. Go directly to **[API keys](https://confluent.cloud/settings/api-keys)**.
 2. Click **+ Add API key**.
