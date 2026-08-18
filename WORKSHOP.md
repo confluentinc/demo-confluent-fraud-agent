@@ -51,13 +51,12 @@ you typically won't be charged during the workshop.
 > workshop will not get you charged.
 
 1. Go directly to **[Billing & payment](https://confluent.cloud/settings/billing/payment)**.
-2. Open the **Payment details & contacts** tab.
+2. Open the **Payment details and contacts** tab.
+3. Click **Add credit card / bank account**.
 
-![Billing & payment — Payment details & contacts](images/workshop/0_step2_1.png)
+![Payment details and contacts — Add credit card / bank account](images/workshop/0_step2_1.png)
 
-3. Click **Add payment method** / **Edit card** (direct link:
-   **[confluent.cloud/settings/billing/payment/edit-card](https://confluent.cloud/settings/billing/payment/edit-card)**).
-4. Enter your **card number, expiry, CVC, and billing address**, then **Save**.
+4. Enter your **card details**, then **Save**.
    > You must have the **OrganizationAdmin** role to enter a payment method. If you created the
    > account, you already are the OrganizationAdmin.
 
