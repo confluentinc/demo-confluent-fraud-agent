@@ -15,7 +15,8 @@ query. Terraform creates the cluster, the Bedrock connection, the tools JAR, and
 
 These are **not** part of the timed hour. Complete them before the workshop:
 
-- [ ] **Confluent Cloud account** + a **Cloud resource management** API key & secret.
+- [ ] **Confluent Cloud account, a payment method, and a Cloud API key & secret** — the three
+      steps in [0.1](#01-set-up-confluent-cloud) below.
 - [ ] **AWS account with an IAM user** that has a long-lived access key & secret and the
       `bedrock:InvokeModel` permission.
 - [ ] **Claude model access enabled in Amazon Bedrock**, region **`us-east-1`** — enable
@@ -23,6 +24,70 @@ These are **not** part of the timed hour. Complete them before the workshop:
       without it, `AI_RUN_AGENT` fails with AccessDenied and no alerts appear.
 - [ ] **Tools installed:** [Terraform](https://github.com/hashicorp/terraform),
       [Git](https://git-scm.com/), [Python 3.11+](https://www.python.org/downloads/).
+
+### 0.1 Set up Confluent Cloud
+
+#### Step 1 — Create your Confluent Cloud account
+
+1. Go to **[confluent.io/get-started](https://www.confluent.io/get-started/?product=cloud)**
+   (or **[confluent.cloud/signup](https://confluent.cloud/signup)**).
+2. Enter your **name**, **work email**, **company**, and a **password**, then accept the terms
+   and click **Start Free**. (You can also sign up with Google, GitHub, Microsoft, or Okta SSO —
+   click that option instead of entering a password.)
+3. **Verify your email:** open the message from Confluent titled *"Verify your email address"*
+   and click the verification link. This signs you in and creates your **organization** with a
+   free usage credit already applied (the amount is shown in the console; it expires 30 days
+   after you receive it).
+4. On first sign-in, Confluent shows a short **onboarding wizard** (a few questions about your
+   use case) and then offers to **create your first cluster**.
+   > **Skip the cluster creation.** Do **not** click **Add cluster** / **Create cluster** — this
+   > workshop's Terraform creates its own environment *and* cluster (`fraud-agent-env-…` /
+   > `fraud-agent-cluster-…`) for you. If the wizard drops you on a "Create cluster" page, just
+   > leave it: click the Confluent logo (top-left) or navigate to **Environments** to exit. Your
+   > account already has a **`default`** environment; you don't need to create anything here.
+   > (If you *do* accidentally create a cluster, it won't break anything — Terraform uses a
+   > separate environment — but you can delete it later to avoid charges.)
+
+#### Step 2 — Add a payment method (credit card)
+
+A card is required so Terraform can create a **Standard** cluster (Standard/Dedicated clusters
+are not covered by the free-trial-only tier). Free credit is consumed first, so you typically
+won't be charged during the workshop.
+
+1. In the Confluent Cloud Console, click the **hamburger menu (☰)** in the top-right, then
+   **Administration → Billing & payment** (or go directly to
+   **[confluent.cloud/settings/billing/payment](https://confluent.cloud/settings/billing/payment)**).
+2. Open the **Payment details & contacts** tab. Here you can also see your **free credit balance**
+   and days remaining.
+3. Click **Add payment method** / **Edit card** (direct link:
+   **[confluent.cloud/settings/billing/payment/edit-card](https://confluent.cloud/settings/billing/payment/edit-card)**).
+4. Enter your **card number, expiry, CVC, and billing address**, then **Save**.
+   > You must have the **OrganizationAdmin** role to enter a payment method. If you created the
+   > account, you already are the OrganizationAdmin.
+
+#### Step 3 — Create a Cloud API key & secret
+
+Terraform authenticates with an **org-level "Cloud resource management" API key** (not a
+cluster-scoped key). This is what you'll paste into `workshop.tfvars`.
+
+1. In the Console, click the **hamburger menu (☰)** in the top-right, then
+   **Administration → API keys**.
+2. Click **+ Add API key**.
+3. For the account scope, select the **My account** tile (simplest for a workshop), then click
+   **Next**. *(A service account works too, but then you must grant it the OrganizationAdmin role
+   separately — "My account" already has your permissions.)*
+4. For the resource scope, select **Cloud resource management**, then click **Next**. This makes
+   it an org-wide key that can manage environments, clusters, Flink, and Schema Registry — which
+   is what Terraform needs.
+5. Give the key a **name** (e.g. `fraud-workshop-terraform`) and an optional description, then
+   click **Create API key**.
+6. **Copy both the Key and the Secret now and store them safely** — the secret is shown **only
+   once**. You can also click **Download** to save them as a file. These two values are your
+   `confluent_cloud_api_key` and `confluent_cloud_api_secret` in `workshop.tfvars`.
+
+> Reference: Confluent docs —
+> [Manage API keys](https://docs.confluent.io/cloud/current/security/authenticate/workload-identities/service-accounts/api-keys/manage-api-keys.html),
+> [Manage payment methods](https://docs.confluent.io/cloud/current/billing/overview.html).
 
 ## 1. Deploy the infrastructure (~8–12 min)
 
