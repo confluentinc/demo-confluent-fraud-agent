@@ -50,9 +50,7 @@ you typically won't be charged during the workshop.
 > All new sign-ups get **$400 in free credit** to use within the first 30 days — deploying this
 > workshop will not get you charged.
 
-1. In the Confluent Cloud Console, click the **hamburger menu (☰)** in the top-right, then
-   **Administration → Billing & payment** (or go directly to
-   **[confluent.cloud/settings/billing/payment](https://confluent.cloud/settings/billing/payment)**).
+1. Go directly to **[Billing & payment](https://confluent.cloud/settings/billing/payment)**.
 2. Open the **Payment details & contacts** tab. Here you can also see your **free credit balance**
    and days remaining.
 3. Click **Add payment method** / **Edit card** (direct link:
