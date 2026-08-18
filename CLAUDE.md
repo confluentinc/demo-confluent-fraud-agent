@@ -84,10 +84,14 @@ cd tools-udf && ./build.sh    # then commit target/fraud-tools.jar
   `WORKSHOP.md`.
 - **Keep `WORKSHOP.md` SQL in sync with `flink.tf`.** `WORKSHOP.md` embeds copies of the 10
   pipeline statements for participants to paste. When you change a statement in `flink.tf`,
-  update the matching block in `WORKSHOP.md`. The only intended differences: the 3
-  `CREATE FUNCTION` statements use the `<TOOLS_ARTIFACT_ID>` placeholder, and the windowing
+  update the matching block in `WORKSHOP.md`. The intended differences: (a) the 3
+  `CREATE FUNCTION` statements use the `<TOOLS_ARTIFACT_ID>` placeholder; (b) the windowing
   statement is preceded by `SET 'sql.tables.scan.idle-timeout' = '5 s';` (in `flink.tf` that
-  lives in `module.profiles`'s `extra_properties`).
+  lives in `module.profiles`'s `extra_properties`); and (c) the windowing statement is also
+  preceded by `SET 'sql.tables.scan.startup.mode' = 'latest-offset';` — **workshop only** (demo
+  intentionally reprocesses from earliest). Latest-offset keeps each participant's agent calls
+  proportional to live traffic instead of replaying topic history through the shared Bedrock
+  account.
 - **Bedrock model id lives in the connection endpoint URL** (`local.bedrock_model_id` →
   `local.bedrock_endpoint`), NOT in `CREATE MODEL`. Change that one line to switch models.
 - **Topic = Flink table name**, snake_case: `transactions`, `user_logins`,

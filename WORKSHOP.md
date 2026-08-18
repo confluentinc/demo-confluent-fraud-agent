@@ -261,14 +261,24 @@ closes when the user goes quiet, so a fraud burst is never split in two. This st
 **continuously** (it stays **RUNNING**).
 
 > [!IMPORTANT]
-> **Run the `SET` first, in the same workspace session, before the `CREATE TABLE`.** It pins
-> the watermark idle-timeout to 5s. Without it, Confluent Cloud's default "progressive
-> idleness" grows the idle timeout as the statement ages and the session windows stall — you'd
-> see an early burst of alerts that then dries up. (In the demo path this is set automatically
-> as a statement property on the windowing job.)
+> **Run both `SET`s first, in the same workspace session, before the `CREATE TABLE`.**
+>
+> - **`sql.tables.scan.idle-timeout = '5 s'`** pins the watermark idle-timeout. Without it,
+>   Confluent Cloud's default "progressive idleness" grows the idle timeout as the statement
+>   ages and the session windows stall — you'd see an early burst of alerts that then dries up.
+>   (In the demo path this is set automatically as a statement property on the windowing job.)
+
+> [!WARNING]
+> **`sql.tables.scan.startup.mode = 'latest-offset'`** makes the windowing statement read only
+> **new** events, not the whole topic history. This matters in the workshop because everyone
+> shares the same AWS Bedrock account: if you started from the beginning of the topics, every
+> old event would be replayed through the agent at once, spiking calls against the shared
+> Bedrock quota. Starting from *latest* keeps each participant's agent calls proportional to
+> live traffic. (The demo path doesn't set this — it intentionally reprocesses from the start.)
 
 ```sql
 SET 'sql.tables.scan.idle-timeout' = '5 s';
+SET 'sql.tables.scan.startup.mode' = 'latest-offset';
 ```
 
 This unions the three input streams and collects each user's activity into a 3-second
