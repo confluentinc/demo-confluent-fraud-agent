@@ -5,7 +5,7 @@ In this workshop you deploy the Confluent Cloud infrastructure with Terraform, t
 
 **Time:** ~1 hour of hands-on work — *if* the prerequisites below are done in advance.
 
-## 0. Before you arrive (prerequisites — do these ahead of time)
+## 0. Prerequisites
 
 These are **not** part of the timed hour. Complete them before the workshop:
 
