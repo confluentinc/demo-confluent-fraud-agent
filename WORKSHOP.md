@@ -111,8 +111,6 @@ Fraud rarely fits fixed if/else rules — catching it takes judgment. So the fir
 is give the pipeline access to a large language model. This statement registers that model as
 `fraud_model` so Flink SQL can call it like any other function.
 
-Run this — and every statement in the sections that follow — in the Flink UI:
-
 1. Navigate to the [Flink UI](https://confluent.cloud/go/flink) and select the **environment**
    Terraform created (`fraud-agent-env-…`).
 2. Open a **SQL workspace**.
