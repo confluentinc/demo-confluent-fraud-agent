@@ -415,7 +415,14 @@ SELECT * FROM account_changes LIMIT 5;
 
 <img src="images/workshop/8_step8_3.png" alt="account_changes query results" width="700">
 
-**4. Add another terminal and start the dashboard** (activate the venv there first):
+**4. Confirm the activity profiles are being built** — each row is one user's session-window
+profile, the exact text the agent scores:
+
+```sql
+SELECT * FROM activity_profiles;
+```
+
+**5. Add another terminal and start the dashboard** (activate the venv there first):
 
 ```bash
 source venv/bin/activate
@@ -429,11 +436,10 @@ generated from here on.
 <img src="images/workshop/8_step8_4.png" alt="Fraud Detection Dashboard" width="800">
 
 
-You can also watch the two stages directly in the workspace:
+You can also watch the high-risk verdicts directly in the workspace:
 
 ```sql
-SELECT * FROM activity_profiles;                     -- one row per user per session window
-SELECT * FROM fraud_alerts WHERE risk_score >= 70;   -- the high-risk verdicts
+SELECT * FROM fraud_alerts WHERE risk_score >= 70;
 ```
 
 ## 9. Cleanup
