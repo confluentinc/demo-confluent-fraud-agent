@@ -154,9 +154,10 @@ WITH (
 );
 ```
 
-> [!NOTE]
-> **Your turn.** Complete the two tools below by filling in the `<function-name>` each one
-> wraps, following the pattern above.
+### 🛠️ Challenge: Forge the other two tools
+
+**Your turn.** Complete the two tools below by filling in the `<function-name>` each one wraps,
+following the pattern above.
 
 ```sql
 CREATE TOOL `freeze_account_tool`
