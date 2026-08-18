@@ -355,7 +355,7 @@ activity and watch the agent score it in real time. Two local apps do this, both
 `.env` Terraform already wrote (no config needed):
 
 - the **producer** — stands in for your customers, streaming synthetic transactions, logins,
-  and account changes (~80% normal, ~20% fraud) into your topics;
+  and account changes into your topics;
 - the **dashboard** — the fraud analyst's screen, showing the agent's alerts as they land.
 
 **1. Install dependencies** (once, from the repo root):
@@ -364,7 +364,7 @@ activity and watch the agent score it in real time. Two local apps do this, both
 python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
 ```
 
-**2. Start the producer** in this terminal:
+**2. Start the producer** in a new terminal:
 
 ```bash
 python producer/generate_events.py
