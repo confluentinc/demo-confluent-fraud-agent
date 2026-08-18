@@ -119,8 +119,7 @@ terraform output flink_database      # -> the workspace Database to select
 ## 2. Connect the model — give the agent a brain
 
 Now we build the fraud-detection pipeline — one piece at a time, across the next five sections
-(2–6). Run each SQL statement in the Flink workspace, top to bottom, waiting for each to finish
-before the next.
+(2–6).
 
 Fraud rarely fits fixed if/else rules — catching it takes judgment. So the first thing you do
 is give the pipeline access to a large language model. Terraform already created a **Bedrock
