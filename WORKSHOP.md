@@ -8,6 +8,8 @@ and stitches each user's recent activity into a per-user profile. A **Streaming 
 on AWS Bedrock) then scores every profile for fraud, calls tools to act, and writes the verdicts
 to a `fraud_alerts` stream.
 
+![Architecture — end-to-end pipeline](images/Architecture.png)
+
 > [!NOTE]
 > **Time:** ~1 hour of hands-on work — *if* the prerequisites below are done in advance.
 
