@@ -125,7 +125,7 @@ Fraud rarely fits fixed if/else rules — catching it takes judgment. So the fir
 is give the pipeline access to a large language model. This statement registers that model as
 `fraud_model` so Flink SQL can call it like any other function. On its own the model just
 "thinks" — you'll give it actions
-and a job in the next sections. (Completes in a few seconds.)
+and a job in the next sections.
 
 ```sql
 CREATE MODEL `fraud_model`
