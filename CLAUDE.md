@@ -87,8 +87,9 @@ cd tools-udf && ./build.sh    # then commit target/fraud-tools.jar
   hands-on statements for participants to paste (model, the 3 tools, agent, windowing, detect —
   **not** the functions, which Terraform creates). When you change one of those in `flink.tf`,
   update the matching block in `WORKSHOP.md`. Note: only `flag_transaction_tool` is shown in
-  full; `freeze_account_tool` / `notify_user_tool` are a "your turn" challenge with the answers
-  in a `<details>` solution. The intended differences from `flink.tf`: (a) the windowing
+  full; `freeze_account_tool` / `notify_user_tool` are a "your turn" challenge shown with the
+  `USING FUNCTION` name replaced by a `<function-name>` placeholder (a `<details>` hint points
+  participants at `SHOW USER FUNCTIONS`). The intended differences from `flink.tf`: (a) the windowing
   statement is preceded by `SET 'sql.tables.scan.idle-timeout' = '5 s';` (in `flink.tf` that
   lives in `module.profiles`'s `extra_properties`); (b) the windowing statement is also preceded
   by `SET 'sql.tables.scan.startup.mode' = 'latest-offset';` — **workshop only** (demo

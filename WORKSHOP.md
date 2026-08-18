@@ -161,18 +161,12 @@ WITH (
 ```
 
 > [!NOTE]
-> **Your turn.** Write the other two tools yourself, following the same pattern:
-> - **`freeze_account_tool`** over the `freeze_account` function — description:
->   *"Temporarily freeze a user account due to suspected fraud. Arguments: user_id, reason."*
-> - **`notify_user_tool`** over the `notify_user` function — description:
->   *"Send a fraud alert notification to the user. Arguments: user_id, message."*
-
-<details>
-<summary>Solution — the other two tools</summary>
+> **Your turn.** Complete the two tools below by filling in the `<function-name>` each one
+> wraps, following the pattern above.
 
 ```sql
 CREATE TOOL `freeze_account_tool`
-USING FUNCTION `freeze_account`
+USING FUNCTION `<function-name>`
 WITH (
   'type' = 'function',
   'description' = 'Temporarily freeze a user account due to suspected fraud. Arguments: user_id, reason.'
@@ -181,12 +175,24 @@ WITH (
 
 ```sql
 CREATE TOOL `notify_user_tool`
-USING FUNCTION `notify_user`
+USING FUNCTION `<function-name>`
 WITH (
   'type' = 'function',
   'description' = 'Send a fraud alert notification to the user. Arguments: user_id, message.'
 );
 ```
+
+<details>
+<summary>Hint — how do I find the function names?</summary>
+
+Terraform already created the functions for you. List them with:
+
+```sql
+SHOW USER FUNCTIONS;
+```
+
+Unlike `SHOW FUNCTIONS` (which also prints Flink's built-ins), `SHOW USER FUNCTIONS` prints
+only the functions in your database — the three you need.
 </details>
 
 ## 4. Build each user's activity profile — turn events into a story
