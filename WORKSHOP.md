@@ -79,12 +79,27 @@ you'll paste into `workshop.tfvars`.
 
 ## 1. Deploy the infrastructure (~8–12 min)
 
-```bash
-git clone https://github.com/confluentinc/demo-confluent-fraud-agent.git && cd demo-confluent-fraud-agent/terraform
-cp workshop.tfvars.example workshop.tfvars
-# edit workshop.tfvars — fill in your 4 credentials (deploy_flink_pipeline is already false)
-terraform init && terraform apply -var-file=workshop.tfvars
-```
+1. Clone the repo and enter the `terraform` directory:
+
+   ```bash
+   git clone https://github.com/confluentinc/demo-confluent-fraud-agent.git
+   cd demo-confluent-fraud-agent/terraform
+   ```
+
+2. Create your vars file from the template:
+
+   ```bash
+   cp workshop.tfvars.example workshop.tfvars
+   ```
+
+3. Edit **`workshop.tfvars`** and fill in your 4 credentials (`deploy_flink_pipeline` is already
+   set to `false`).
+
+4. Deploy:
+
+   ```bash
+   terraform init && terraform apply -var-file=workshop.tfvars
+   ```
 
 This provisions the environment, Kafka cluster, Schema Registry, Flink compute pool, the
 Bedrock connection, the tools JAR artifact, and the **4 tables** — but **not** the AI
