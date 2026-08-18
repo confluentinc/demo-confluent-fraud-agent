@@ -116,6 +116,7 @@ is give the pipeline access to a large language model. This statement registers 
 2. Open a **SQL workspace**.
 3. Set the **Catalog** to your `flink_catalog` output and the **Database** to your
    `flink_database` output.
+4. Run the statement below to create the model in your Flink catalog.
 
 ```sql
 CREATE MODEL `fraud_model`
