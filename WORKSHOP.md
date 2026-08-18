@@ -323,6 +323,10 @@ flagged transaction ids — into the `fraud_alerts` table. It runs **continuousl
 burst of user activity is analyzed within seconds. This is also the statement that actually
 calls Bedrock, so leave it **RUNNING**.
 
+### 🎯 Challenge: Point the query at your agent
+
+**Your turn.** Fill in the `<agent-name>` that `AI_RUN_AGENT` should run.
+
 ```sql
 SET 'client.statement-name' = 'detect-fraud';
 
@@ -333,7 +337,7 @@ WITH `scored` AS (
     CAST(`response` AS STRING) AS `raw_response`,
     REGEXP_EXTRACT(CAST(`response` AS STRING), '\{[\s\S]*\}', 0) AS `json_text`
   FROM `activity_profiles`,
-  LATERAL TABLE(AI_RUN_AGENT(`fraud_detection_agent`, `profile_text`, `user_id`))
+  LATERAL TABLE(AI_RUN_AGENT(`<agent-name>`, `profile_text`, `user_id`))
 )
 SELECT
   `user_id`,
@@ -344,6 +348,16 @@ SELECT
   `raw_response`
 FROM `scored`;
 ```
+
+<details>
+<summary>Hint — how do I find the agent name?</summary>
+
+You created the agent in section 6. List your agents with:
+
+```sql
+SHOW AGENTS;
+```
+</details>
 
 > [!NOTE]
 > This is a continuous statement — keep this cell **RUNNING** for the whole workshop.
