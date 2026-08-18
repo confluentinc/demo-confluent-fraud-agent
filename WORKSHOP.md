@@ -103,14 +103,6 @@ pipeline. It also writes a ready-to-use `.env` for the producer and dashboard.
 > [!NOTE]
 > `terraform apply` takes **~8–12 minutes** — provisioning the Kafka cluster is the slow part.
 
-When it finishes, note these outputs — they're the workspace context you'll select in the
-Flink UI:
-
-```bash
-terraform output flink_catalog       # -> the workspace Catalog to select
-terraform output flink_database      # -> the workspace Database to select
-```
-
 ## 2. Connect the model — give the agent a brain
 
 Now we build the fraud-detection pipeline.
