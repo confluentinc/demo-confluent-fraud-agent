@@ -10,7 +10,7 @@ In this workshop you deploy the Confluent Cloud infrastructure with Terraform, t
 These are **not** part of the timed hour. Complete them before the workshop:
 
 - [ ] **Confluent Cloud account, a payment method, and a Cloud API key & secret** — the three
-      steps in [0.1](#01-set-up-confluent-cloud) below.
+      steps in [Set up Confluent Cloud](#1-set-up-confluent-cloud) below.
 - [ ] **AWS account with an IAM user** that has a long-lived access key & secret and the
       `bedrock:InvokeModel` permission.
 - [ ] **Claude model access enabled in Amazon Bedrock**, region **`us-east-1`** — enable
@@ -19,7 +19,7 @@ These are **not** part of the timed hour. Complete them before the workshop:
 - [ ] **Tools installed:** [Terraform](https://github.com/hashicorp/terraform),
       [Git](https://git-scm.com/), [Python 3.11+](https://www.python.org/downloads/).
 
-### 0.1 Set up Confluent Cloud
+### 1. Set up Confluent Cloud
 
 #### Step 1 — Create your Confluent Cloud account
 
