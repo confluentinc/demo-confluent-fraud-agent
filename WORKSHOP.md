@@ -323,7 +323,7 @@ flagged transaction ids — into the `fraud_alerts` table. It runs **continuousl
 burst of user activity is analyzed within seconds. This is also the statement that actually
 calls Bedrock, so leave it **RUNNING**.
 
-### 🎯 Challenge: Point the query at your agent
+### 🚀 Challenge: Unleash the agent
 
 **Your turn.** Fill in the `<agent-name>` that `AI_RUN_AGENT` should run.
 
