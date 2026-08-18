@@ -190,9 +190,6 @@ Terraform already created the functions for you. List them with:
 ```sql
 SHOW USER FUNCTIONS;
 ```
-
-Unlike `SHOW FUNCTIONS` (which also prints Flink's built-ins), `SHOW USER FUNCTIONS` prints
-only the functions in your database — the three you need.
 </details>
 
 ## 4. Build each user's activity profile — turn events into a story
