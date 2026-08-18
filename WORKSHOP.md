@@ -146,8 +146,8 @@ transaction, freeze a compromised account, or warn the customer. That takes two 
 *description* the agent reads to decide *when* to call that action).
 
 The three **functions** — `flag_transaction`, `freeze_account`, `notify_user` — were already
-created for you by Terraform (they reference the uploaded JAR by its artifact id, so we
-automated that step). Your job is to expose each one as a **tool**.
+created for you by Terraform (they reference the uploaded JAR by its artifact id). Your job is
+to expose each one as a **tool**.
 
 Here's the first tool, wrapping the `flag_transaction` function:
 
