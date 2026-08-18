@@ -204,6 +204,8 @@ SHOW USER FUNCTIONS;
 
 ## 5. Build each user's activity profile — turn events into a story
 
+<img src="images/workshop/5_step5_arch.png" alt="Pipeline — session-window aggregation into activity_profiles" width="800">
+
 A fraud analyst needs one user's recent behavior in a single view, but events arrive as three
 separate raw streams (transactions, logins, account changes). This statement stitches them
 together: for each user it gathers a short burst of activity into a single, human-readable
@@ -261,6 +263,8 @@ GROUP BY `user_id`, `window_start`, `window_end`;
 > This is a continuous statement — keep this cell **RUNNING** for the whole workshop.
 
 ## 6. Assemble the fraud analyst — create the agent
+
+<img src="images/workshop/6_step6_arch.png" alt="Pipeline — Fraud Streaming Agent producing fraud_alerts" width="800">
 
 Now combine the brain, the hands, and a **job description**. The prompt is where the use-case
 logic lives: it tells the agent how to score risk from 0–100, which tools to call at each score
