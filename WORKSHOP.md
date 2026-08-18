@@ -67,6 +67,10 @@ cluster-scoped key). This is what you'll paste into `workshop.tfvars`.
 2. Click **+ Add API key**.
 3. For the account scope, select the **My account** tile (simplest for a workshop), then click
    **Next**.
+
+> [!NOTE]
+> A service account works too, but then you must grant it the OrganizationAdmin role
+> separately — "My account" already has your permissions.
 4. For the resource scope, select **Cloud resource management**, then click **Next**. This makes
    it an org-wide key that can manage environments, clusters, Flink, and Schema Registry — which
    is what Terraform needs.
