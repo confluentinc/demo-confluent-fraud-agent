@@ -63,8 +63,7 @@ you typically won't be charged during the workshop.
 Terraform authenticates with an **org-level "Cloud resource management" API key** (not a
 cluster-scoped key). This is what you'll paste into `workshop.tfvars`.
 
-1. In the Console, click the **hamburger menu (☰)** in the top-right, then
-   **Administration → API keys**.
+1. Go directly to **[API keys](https://confluent.cloud/settings/api-keys)**.
 2. Click **+ Add API key**.
 3. For the account scope, select the **My account** tile (simplest for a workshop), then click
    **Next**. *(A service account works too, but then you must grant it the OrganizationAdmin role
