@@ -3,6 +3,11 @@
 In this workshop you deploy the Confluent Cloud infrastructure with Terraform, then build the
 **real-time fraud detection AI pipeline yourself**.
 
+The pipeline watches three live streams — **transactions**, **logins**, and **account changes** —
+and stitches each user's recent activity into a per-user profile. A **Streaming Agent** (Claude
+on AWS Bedrock) then scores every profile for fraud, calls tools to act, and writes the verdicts
+to a `fraud_alerts` stream.
+
 > [!NOTE]
 > **Time:** ~1 hour of hands-on work — *if* the prerequisites below are done in advance.
 
