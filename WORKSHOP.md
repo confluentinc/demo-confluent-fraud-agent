@@ -108,10 +108,10 @@ pipeline. It also writes a ready-to-use `.env` for the producer and dashboard.
 > [!NOTE]
 > `terraform apply` takes **~8–12 minutes** — provisioning the Kafka cluster is the slow part.
 
-When it finishes, note these outputs (you'll paste them into the SQL below):
+When it finishes, note these outputs — they're the workspace context you'll select in the
+Flink UI:
 
 ```bash
-terraform output tools_artifact_id   # -> paste into the CREATE FUNCTION statements
 terraform output flink_catalog       # -> the workspace Catalog to select
 terraform output flink_database      # -> the workspace Database to select
 ```
@@ -141,33 +141,15 @@ On its own the model just "thinks" — you'll give it actions and a job in the n
 ## 3. Define the actions — give the agent hands
 
 A fraud analyst that can only *think* isn't useful; it has to *act* — flag a suspicious
-transaction, freeze a compromised account, or warn the customer. You wire that up in two moves.
+transaction, freeze a compromised account, or warn the customer. That takes two layers: a
+**function** (the actual action, implemented in the UDF JAR) and a **tool** (the plain-English
+*description* the agent reads to decide *when* to call that action).
 
-**First, register each action as a Flink function**, backed by the UDF JAR Terraform uploaded.
-Get your artifact id by running `terraform output tools_artifact_id` in the `terraform`
-directory, then **replace `<TOOLS_ARTIFACT_ID>` in all three statements** with that value.
+The three **functions** — `flag_transaction`, `freeze_account`, `notify_user` — were already
+created for you by Terraform (they reference the uploaded JAR by its artifact id, so we
+automated that step). Your job is to expose each one as a **tool**.
 
-```sql
-CREATE FUNCTION `flag_transaction`
-AS 'io.confluent.frauddemo.FlagTransaction'
-USING JAR 'confluent-artifact://<TOOLS_ARTIFACT_ID>';
-```
-
-```sql
-CREATE FUNCTION `freeze_account`
-AS 'io.confluent.frauddemo.FreezeAccount'
-USING JAR 'confluent-artifact://<TOOLS_ARTIFACT_ID>';
-```
-
-```sql
-CREATE FUNCTION `notify_user`
-AS 'io.confluent.frauddemo.NotifyUser'
-USING JAR 'confluent-artifact://<TOOLS_ARTIFACT_ID>';
-```
-
-**Then, expose each function as a tool.** A tool adds the plain-English *description* the agent
-reads when deciding *when* to reach for an action — the function is the hands, the description
-tells the agent what they're for.
+Here's the first tool, wrapping the `flag_transaction` function:
 
 ```sql
 CREATE TOOL `flag_transaction_tool`
@@ -177,6 +159,16 @@ WITH (
   'description' = 'Flag a specific transaction as potentially fraudulent for manual review. Arguments: transaction_id, reason.'
 );
 ```
+
+> [!NOTE]
+> **Your turn.** Write the other two tools yourself, following the same pattern:
+> - **`freeze_account_tool`** over the `freeze_account` function — description:
+>   *"Temporarily freeze a user account due to suspected fraud. Arguments: user_id, reason."*
+> - **`notify_user_tool`** over the `notify_user` function — description:
+>   *"Send a fraud alert notification to the user. Arguments: user_id, message."*
+
+<details>
+<summary>Solution — the other two tools</summary>
 
 ```sql
 CREATE TOOL `freeze_account_tool`
@@ -195,6 +187,7 @@ WITH (
   'description' = 'Send a fraud alert notification to the user. Arguments: user_id, message.'
 );
 ```
+</details>
 
 ## 4. Build each user's activity profile — turn events into a story
 

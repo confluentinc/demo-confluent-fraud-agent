@@ -201,7 +201,6 @@ module "model" {
 # ------------------------ Functions (from JAR) -----------------------------
 module "fn_flag" {
   source           = "./modules/flink-statement"
-  count            = var.deploy_flink_pipeline ? 1 : 0
   organization_id  = local.flink_common.organization_id
   environment_id   = local.flink_common.environment_id
   compute_pool_id  = local.flink_common.compute_pool_id
@@ -222,7 +221,6 @@ module "fn_flag" {
 
 module "fn_freeze" {
   source           = "./modules/flink-statement"
-  count            = var.deploy_flink_pipeline ? 1 : 0
   organization_id  = local.flink_common.organization_id
   environment_id   = local.flink_common.environment_id
   compute_pool_id  = local.flink_common.compute_pool_id
@@ -243,7 +241,6 @@ module "fn_freeze" {
 
 module "fn_notify" {
   source           = "./modules/flink-statement"
-  count            = var.deploy_flink_pipeline ? 1 : 0
   organization_id  = local.flink_common.organization_id
   environment_id   = local.flink_common.environment_id
   compute_pool_id  = local.flink_common.compute_pool_id

@@ -47,7 +47,7 @@ a node in Stream Lineage). All Flink/agent/model/tool SQL is defined inline in
 | `agent/models.py` | Pydantic data-model reference only — not imported at runtime. |
 | `README.md` | Landing page: use-case + architecture + shared prerequisites, then "Choose your path" linking to `DEMO.md` / `WORKSHOP.md`. |
 | `DEMO.md` | Demo path: one-command `terraform apply` deploy steps; links to `WALKTHROUGH.md`. |
-| `WORKSHOP.md` | Self-service workshop path: deploy infra + tables via `deploy_flink_pipeline=false`, then run the 10 pipeline statements by hand in the Flink UI. Inline SQL must match `flink.tf`. |
+| `WORKSHOP.md` | Self-service workshop path: deploy infra + tables + functions via `deploy_flink_pipeline=false`, then run the hands-on statements (model, tools, agent, windowing, detect) by hand in the Flink UI. Inline SQL must match `flink.tf`. |
 | `WALKTHROUGH.md` | ~15-min presenter walkthrough (Stream Lineage → Flink job → dashboard); screenshots in `images/demo/`. Linked from `DEMO.md`. |
 
 ## Commands
@@ -78,18 +78,22 @@ cd tools-udf && ./build.sh    # then commit target/fraud-tools.jar
   (The one exception is the `deploy_flink_pipeline` mode flag below.)
 - **Two deployment paths via `deploy_flink_pipeline`.** Default `true` = the one-command
   demo (deploys everything). `false` (see `terraform/workshop.tfvars.example`) = workshop
-  mode: Terraform deploys infra + the Bedrock connection + tools JAR + the 4 tables, and the
-  10 pipeline statement modules (`model`, `fn_*`, `tool_*`, `agent`, `profiles`, `detect`)
-  are gated off with `count` so participants run them by hand from the Flink UI per
+  mode: Terraform deploys infra + the Bedrock connection + tools JAR + the 4 tables **+ the 3
+  `CREATE FUNCTION` statements** (`fn_*`, ungated — they reference the artifact id, so we don't
+  make participants handle it). The 7 hands-on modules (`model`, `tool_*`, `agent`, `profiles`,
+  `detect`) are gated off with `count` so participants run them by hand from the Flink UI per
   `WORKSHOP.md`.
-- **Keep `WORKSHOP.md` SQL in sync with `flink.tf`.** `WORKSHOP.md` embeds copies of the 10
-  pipeline statements for participants to paste. When you change a statement in `flink.tf`,
-  update the matching block in `WORKSHOP.md`. The intended differences: (a) the 3
-  `CREATE FUNCTION` statements use the `<TOOLS_ARTIFACT_ID>` placeholder; (b) the windowing
+- **Keep `WORKSHOP.md` SQL in sync with `flink.tf`.** `WORKSHOP.md` embeds copies of the
+  hands-on statements for participants to paste (model, the 3 tools, agent, windowing, detect —
+  **not** the functions, which Terraform creates). When you change one of those in `flink.tf`,
+  update the matching block in `WORKSHOP.md`. Note: only `flag_transaction_tool` is shown in
+  full; `freeze_account_tool` / `notify_user_tool` are a "your turn" challenge with the answers
+  in a `<details>` solution. The intended differences from `flink.tf`: (a) the windowing
   statement is preceded by `SET 'sql.tables.scan.idle-timeout' = '5 s';` (in `flink.tf` that
-  lives in `module.profiles`'s `extra_properties`); and (c) the windowing statement is also
-  preceded by `SET 'sql.tables.scan.startup.mode' = 'latest-offset';` — **workshop only** (demo
-  intentionally reprocesses from earliest). Latest-offset keeps each participant's agent calls
+  lives in `module.profiles`'s `extra_properties`); (b) the windowing statement is also preceded
+  by `SET 'sql.tables.scan.startup.mode' = 'latest-offset';` — **workshop only** (demo
+  intentionally reprocesses from earliest); and (c) both continuous statements carry a
+  `SET 'client.statement-name' = '…';`. Latest-offset keeps each participant's agent calls
   proportional to live traffic instead of replaying topic history through the shared Bedrock
   account.
 - **Bedrock model id lives in the connection endpoint URL** (`local.bedrock_model_id` →
