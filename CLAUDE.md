@@ -44,7 +44,7 @@ a node in Stream Lineage). All Flink/agent/model/tool SQL is defined inline in
 | `producer/generate_events.py` | Synthetic event generator (Avro + SASL_SSL). |
 | `dashboard/app.py` | Streamlit dashboard (Avro + SASL_SSL); Recent Fraud Alerts table shows severity/user/score/time/reasoning/**actions**. |
 | `agent/models.py` | Pydantic data-model reference only — not imported at runtime. |
-| `demo.md` | ~15-min presenter walkthrough (Stream Lineage → Flink job → dashboard); screenshots in `images/demo/`. Linked from the README. |
+| `WALKTHROUGH.md` | ~15-min presenter walkthrough (Stream Lineage → Flink job → dashboard); screenshots in `images/demo/`. Linked from `DEMO.md`. |
 
 ## Commands
 
