@@ -23,8 +23,7 @@ These are **not** part of the timed hour. Complete them before the workshop:
 
 #### Step 1 — Create your Confluent Cloud account
 
-1. Go to **[confluent.io/get-started](https://www.confluent.io/get-started/?product=cloud)**
-   (or **[confluent.cloud/signup](https://confluent.cloud/signup)**).
+1. Go to **[confluent.cloud/signup](https://confluent.cloud/signup)**.
 2. Enter your **name**, **work email**, **company**, and a **password**, then accept the terms
    and click **Start Free**.
 3. On first sign-in, an **onboarding wizard** asks a few questions, then offers to create your
