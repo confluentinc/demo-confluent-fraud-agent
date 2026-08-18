@@ -1,13 +1,7 @@
 # 🛠️ Self-Service Workshop — Build the Streaming Agent by Hand
 
 In this workshop you deploy the Confluent Cloud infrastructure with Terraform, then build the
-**real-time fraud detection AI pipeline yourself** — running each Flink SQL statement in the
-Confluent Cloud UI: the model, the function tools, the agent, the windowing, and the detection
-query. Terraform creates the cluster, the Bedrock connection, the tools JAR, and the 4 tables
-(so the producer can start immediately); **you create everything else**.
-
-> The one-command auto-deployed version is the [Demo path](DEMO.md). This workshop is the
-> hands-on version.
+**real-time fraud detection AI pipeline yourself**.
 
 **Time:** ~1 hour of hands-on work — *if* the prerequisites below are done in advance.
 
