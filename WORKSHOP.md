@@ -1,4 +1,4 @@
-# 🛠️ Self-Service Workshop — Build the Streaming Agent by Hand
+# 🛠️ Self-Service Workshop — Build a Fraud Streaming Agent
 
 In this workshop you deploy the Confluent Cloud infrastructure with Terraform, then build the
 **real-time fraud detection AI pipeline yourself**.
