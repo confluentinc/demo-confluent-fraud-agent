@@ -407,5 +407,5 @@ SELECT * FROM fraud_alerts WHERE risk_score >= 70;   -- the high-risk verdicts
 ## 9. Cleanup
 
 ```bash
-cd terraform && terraform destroy -var-file=workshop.tfvars
+cd terraform && terraform destroy -var-file=workshop.tfvars -auto-approve
 ```
