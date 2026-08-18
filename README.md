@@ -33,7 +33,7 @@ Everything except the producer and dashboard runs in Confluent Cloud — there i
 </tr>
 </table>
 
-![Stream Lineage — end-to-end pipeline](images/demo/17-recap-lineage.png)
+![Architecture — end-to-end pipeline](images/Architecture.png)
 
 ## Prerequisites
 
