@@ -114,9 +114,18 @@ is give the pipeline access to a large language model. This statement registers 
 
 1. Navigate to the [Flink UI](https://confluent.cloud/go/flink) and select the **environment**
    Terraform created (`fraud-agent-env-…`).
+
+   <img src="images/workshop/3_step3_1.png" alt="Select the fraud-agent environment" width="600">
+
 2. Open a **SQL workspace**.
+
+   <img src="images/workshop/3_step3_2.png" alt="Compute pool — open SQL Workspace" width="600">
+
 3. Set the **Catalog** to your `flink_catalog` output and the **Database** to your
    `flink_database` output.
+
+   <img src="images/workshop/3_step3_3.png" alt="Set the workspace catalog and database" width="700">
+
 4. Run the statement below to create the model in your Flink catalog.
 
 ```sql
@@ -392,13 +401,19 @@ python producer/generate_events.py
 SELECT * FROM transactions LIMIT 5;
 ```
 
+<img src="images/workshop/8_step8_1.png" alt="transactions query results" width="700">
+
 ```sql
 SELECT * FROM user_logins LIMIT 5;
 ```
 
+<img src="images/workshop/8_step8_2.png" alt="user_logins query results" width="700">
+
 ```sql
 SELECT * FROM account_changes LIMIT 5;
 ```
+
+<img src="images/workshop/8_step8_3.png" alt="account_changes query results" width="700">
 
 **4. Add another terminal and start the dashboard** (activate the venv there first):
 
@@ -410,6 +425,9 @@ streamlit run dashboard/app.py   # open http://localhost:8501
 Give it ~1–2 minutes: as each user's activity burst closes its session window, the agent scores
 it and high-risk cases surface as alerts. Keep the producer running — the dashboard shows alerts
 generated from here on.
+
+<img src="images/workshop/8_step8_4.png" alt="Fraud Detection Dashboard" width="800">
+
 
 You can also watch the two stages directly in the workspace:
 
