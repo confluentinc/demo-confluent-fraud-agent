@@ -244,6 +244,9 @@ GROUP BY `user_id`, `window_start`, `window_end`;
 > - **`idle-timeout = '5 s'`** keeps the session-window watermark advancing — without it alerts start, then dry up.
 > - **`startup.mode = 'latest-offset'`** reads only new events. Everyone shares one Bedrock account, so replaying topic history would spike the shared quota.
 
+> [!NOTE]
+> This is a continuous statement — keep this cell **RUNNING** for the whole workshop.
+
 ## 5. Assemble the fraud analyst — create the agent
 
 Now combine the brain, the hands, and a **job description**. The prompt is where the use-case
@@ -330,6 +333,9 @@ SELECT
   `raw_response`
 FROM `scored`;
 ```
+
+> [!NOTE]
+> This is a continuous statement — keep this cell **RUNNING** for the whole workshop.
 
 ## 7. Run the producer and dashboard (~8–12 min)
 
