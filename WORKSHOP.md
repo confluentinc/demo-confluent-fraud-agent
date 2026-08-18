@@ -47,7 +47,8 @@ you typically won't be charged during the workshop.
 2. Open the **Payment details and contacts** tab.
 3. Click **Add credit card / bank account**.
 
-![Payment details and contacts — Add credit card / bank account](images/workshop/0_step2_1.png)
+<img src="images/workshop/0_step2_1.png" alt="Payment details and contacts — Add credit card / bank account" width="500">
+
 
 4. Enter your **card details**, then **Save**.
 
@@ -60,7 +61,8 @@ you'll paste into `workshop.tfvars`.
 2. On the **Create API key** form: enter a **Name** (e.g. `Workshop`), select **My account**, and
    set **Select key scope** to **Cloud resource management**.
 
-![Create API key — My account + Cloud resource management](images/workshop/0_step3_1.png)
+<img src="images/workshop/0_step3_1.png" alt="Create API key — My account + Cloud resource management" width="500">
+
 
 > [!NOTE]
 > A service account works too, but then you must grant it the OrganizationAdmin role
