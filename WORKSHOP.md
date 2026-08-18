@@ -145,9 +145,7 @@ A fraud analyst that can only *think* isn't useful; it has to *act* — flag a s
 transaction, freeze a compromised account, or warn the customer. You wire that up in two moves.
 
 **First, register each action as a Flink function**, backed by the UDF JAR Terraform uploaded.
-(In this demo the functions are safe mocks that just return a confirmation string, but the agent
-genuinely calls them.) **Replace `<TOOLS_ARTIFACT_ID>` in all three with your
-`tools_artifact_id` output.**
+**Replace `<TOOLS_ARTIFACT_ID>` in all three with your `tools_artifact_id` output.**
 
 ```sql
 CREATE FUNCTION `flag_transaction`
