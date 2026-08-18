@@ -105,6 +105,17 @@ This provisions the environment, Kafka cluster, Schema Registry, Flink compute p
 Bedrock connection, the tools JAR artifact, and the **4 tables** — but **not** the AI
 pipeline. It also writes a ready-to-use `.env` for the producer and dashboard.
 
+> [!NOTE]
+> `terraform apply` takes **~8–12 minutes** — provisioning the Kafka cluster is the slow part.
+
+When it finishes, note these outputs (you'll paste them into the SQL below):
+
+```bash
+terraform output tools_artifact_id   # -> paste into the CREATE FUNCTION statements
+terraform output flink_catalog       # -> the workspace Catalog to select
+terraform output flink_database      # -> the workspace Database to select
+```
+
 ## 2. Open the Flink workspace and set your context
 
 Open the [Flink workspace](https://confluent.cloud/go/flink). Set the **Catalog** to your
