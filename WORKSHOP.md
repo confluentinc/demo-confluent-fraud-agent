@@ -32,13 +32,8 @@ These are **not** part of the timed hour. Complete them before the workshop:
 1. Go to **[confluent.io/get-started](https://www.confluent.io/get-started/?product=cloud)**
    (or **[confluent.cloud/signup](https://confluent.cloud/signup)**).
 2. Enter your **name**, **work email**, **company**, and a **password**, then accept the terms
-   and click **Start Free**. (You can also sign up with Google, GitHub, Microsoft, or Okta SSO —
-   click that option instead of entering a password.)
-3. **Verify your email:** open the message from Confluent titled *"Verify your email address"*
-   and click the verification link. This signs you in and creates your **organization** with a
-   free usage credit already applied (the amount is shown in the console; it expires 30 days
-   after you receive it).
-4. On first sign-in, Confluent shows a short **onboarding wizard** (a few questions about your
+   and click **Start Free**.
+3. On first sign-in, Confluent shows a short **onboarding wizard** (a few questions about your
    use case) and then offers to **create your first cluster**.
    > **Skip the cluster creation.** Do **not** click **Add cluster** / **Create cluster** — this
    > workshop's Terraform creates its own environment *and* cluster (`fraud-agent-env-…` /
