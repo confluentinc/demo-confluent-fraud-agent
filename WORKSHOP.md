@@ -123,9 +123,7 @@ Now we build the fraud-detection pipeline — one piece at a time, across the ne
 
 Fraud rarely fits fixed if/else rules — catching it takes judgment. So the first thing you do
 is give the pipeline access to a large language model. This statement registers that model as
-`fraud_model` so Flink SQL can call it like any other function. On its own the model just
-"thinks" — you'll give it actions
-and a job in the next sections.
+`fraud_model` so Flink SQL can call it like any other function.
 
 ```sql
 CREATE MODEL `fraud_model`
@@ -138,6 +136,8 @@ WITH (
   'bedrock.params.max_tokens' = '8192'
 );
 ```
+
+On its own the model just "thinks" — you'll give it actions and a job in the next sections.
 
 ## 3. Define the actions — give the agent hands
 
