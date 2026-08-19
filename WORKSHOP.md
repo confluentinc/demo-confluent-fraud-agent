@@ -80,7 +80,7 @@ you'll paste into `workshop.tfvars`.
    or click **Download**). These are your `confluent_cloud_api_key` and `confluent_cloud_api_secret`
    in `workshop.tfvars`.
 
-## 2. Deploy the infrastructure (~8–12 min)
+## 2. Deploy the infrastructure (~5–7 min)
 
 1. Clone the repo and enter the `terraform` directory:
 
@@ -109,7 +109,7 @@ Bedrock connection, the tools JAR artifact, and the **4 tables** — but **not**
 pipeline. It also writes a ready-to-use `.env` for the producer and dashboard.
 
 > [!NOTE]
-> `terraform apply` takes **~8–12 minutes** — provisioning the Kafka cluster is the slow part.
+> Grab a coffee ☕ — it takes **5–7 minutes** to deploy.
 
 ## 3. Connect the model — give the agent a brain
 
