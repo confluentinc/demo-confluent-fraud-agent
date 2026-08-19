@@ -96,7 +96,14 @@ you'll paste into `workshop.tfvars`.
    ```
 
 3. Edit **`workshop.tfvars`** and fill in your 4 credentials (`deploy_flink_pipeline` is already
-   set to `false`).
+   set to `false`):
+
+   | Variable | Where to get it |
+   |---|---|
+   | `confluent_cloud_api_key` | The **Key** from [Set up Confluent Cloud → Step 3](#step-3--create-a-cloud-api-key--secret) above |
+   | `confluent_cloud_api_secret` | The **Secret** from the same step |
+   | `aws_access_key_id` | Your AWS IAM user's access key ID (Bedrock access) |
+   | `aws_secret_access_key` | Your AWS IAM user's secret access key |
 
 4. Deploy:
 
