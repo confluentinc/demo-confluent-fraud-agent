@@ -477,7 +477,8 @@ Agent scores every burst and acts in seconds. Not bad for an hour's work.
 
 ## 9. Cleanup
 
-Tear it all down when you're done (so the credits last):
+Stop the producer by running **Ctrl+C** in its terminal. Then tear it all down (so the credits
+last):
 
 ```bash
 cd terraform && terraform destroy -var-file=workshop.tfvars -auto-approve
