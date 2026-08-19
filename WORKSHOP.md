@@ -401,19 +401,24 @@ activity and watch the agent score it in real time. Two local apps do this, both
   and account changes into your topics;
 - the **dashboard** — the fraud analyst's screen, showing the agent's alerts as they land.
 
-**1. Install dependencies** (once, from the repo root):
+**1. Open a new terminal and `cd` into the repo root directory.**
+
+**2. Install dependencies:**
 
 ```bash
 python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
 ```
 
-**2. Start the producer** in a new terminal:
+**3. Start the producer:**
 
 ```bash
 python producer/generate_events.py
 ```
 
-**3. Confirm events are flowing** — back in the Flink UI, query the input topics:
+> [!NOTE]
+> Leave this running and open a new terminal tab for the next steps.
+
+**4. Confirm events are flowing** — back in the Flink Workspace, query the input topics:
 
 ```sql
 SELECT * FROM transactions LIMIT 5;
@@ -433,7 +438,7 @@ SELECT * FROM account_changes LIMIT 5;
 
 <img src="images/workshop/8_step8_3.png" alt="account_changes query results" width="700">
 
-**4. Confirm the activity profiles are being built** — each row is one user's session-window
+**5. Confirm the activity profiles are being built** — each row is one user's session-window
 profile, the exact text the agent scores:
 
 ```sql
@@ -442,7 +447,7 @@ SELECT * FROM activity_profiles;
 
 <img src="images/workshop/8_step8_4.png" alt="activity_profiles query results" width="700">
 
-**5. Add another terminal and start the dashboard** (activate the venv there first):
+**6. Add another terminal and start the dashboard:**
 
 ```bash
 source venv/bin/activate
