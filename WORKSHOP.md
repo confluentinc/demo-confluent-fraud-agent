@@ -80,7 +80,7 @@ you'll paste into `workshop.tfvars`.
    or click **Download**). These are your `confluent_cloud_api_key` and `confluent_cloud_api_secret`
    in `workshop.tfvars`.
 
-## 2. Deploy the infrastructure (~5–7 min)
+## 2. Deploy the infrastructure (~10–12 min)
 
 1. Clone the repo and enter the `terraform` directory:
 
