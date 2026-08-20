@@ -280,17 +280,19 @@ logic lives: it tells the agent how to score risk from 0–100, which tools to c
 band (freeze + notify when risk is high, flag + notify when medium, and so on), and to return a
 single strict-JSON verdict you can store — it *is* the fraud policy.
 
-Confluent Cloud gives you two ways to build the agent: the guided **Streaming Agents UI**, or a
-`CREATE AGENT` SQL statement. Use whichever you like — the result is the same.
+### 🎯 Challenge: Give the agent its model
 
-### Build it in the Streaming Agents UI
+Build the agent **either** way below — the result is the same. In both, you point it at the
+model you created in section 3 (list your models with `SHOW MODELS;`).
+
+**Option A — Streaming Agents UI**
 
 1. In the Flink Workspace left panel, expand your cluster, find **Agents**, and click the **+**.
    (Or from your environment page, open **Streaming agents → Create streaming agent**.)
 2. **Database** — select your cluster (`flink_database`).
 3. **Agent name** — `fraud_detection_agent`.
-4. **Model** — select `fraud_model` (the model you created in section 3).
-5. **Instructions** — paste the fraud-policy prompt: expand *Prefer SQL?* below and copy the
+4. **Model** — select `fraud_model`.
+5. **Instructions** — paste the fraud-policy prompt: expand *Option B* below and copy the
    text between the single quotes after `USING PROMPT`.
 6. **Tools** — add all three: `flag_transaction_tool`, `freeze_account_tool`,
    `notify_user_tool`.
@@ -299,10 +301,9 @@ Confluent Cloud gives you two ways to build the agent: the guided **Streaming Ag
 8. **Save** to create the agent.
 
 <details>
-<summary>Prefer SQL? Create the agent with a <code>CREATE AGENT</code> statement</summary>
+<summary><strong>Option B</strong> — create the agent with a <code>CREATE AGENT</code> statement</summary>
 
-**🎯 Challenge:** fill in the `<model-name>` the agent runs on (hint: run `SHOW MODELS;` — you
-created it in section 3).
+Fill in the `<model-name>` the agent runs on.
 
 ```sql
 CREATE AGENT `fraud_detection_agent`
