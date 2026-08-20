@@ -289,17 +289,9 @@ at the model you created in section 3 (need the name? run `SHOW MODELS;`).
 
 1. In the Flink Workspace left panel, expand your cluster, find **Agents**, and click the **+**.
    (Or from your environment page, open **Streaming agents → Create streaming agent**.)
-2. **Database** — select your **Kafka cluster** (`flink_database`).
 3. **Agent name** — `fraud_detection_agent`.
 4. 🎯 **Model** — pick the model you created in section 3. Need the name? Run `SHOW MODELS;`.
-5. **Instructions** — paste the fraud-policy prompt shown below these steps.
-6. **Tools** — add all three: `flag_transaction_tool`, `freeze_account_tool`,
-   `notify_user_tool`.
-7. **Advanced settings** (optional) — `max_iterations` = `6`, `handle_exception` = `continue`,
-   `max_consecutive_failures` = `5`.
-8. **Save** to create the agent.
-
-Fraud-policy prompt for step 5:
+5. **Instructions** — paste this fraud-policy prompt:
 
 ```text
 You are a real-time fraud detection analyst.
@@ -339,6 +331,12 @@ CRITICAL RULES:
   self-corrections, no markdown, no code fences. Put all explanation inside "reasoning", nowhere else.
 {"user_id": "<copy from input>", "risk_score": <0-100 integer>, "reasoning": "<one or two sentences>", "actions_taken": ["freeze_account"|"flag_transaction"|"notify_user"], "flagged_transaction_ids": ["<copied transaction ids>"]}
 ```
+
+6. **Tools** — add all three: `flag_transaction_tool`, `freeze_account_tool`,
+   `notify_user_tool`.
+7. **Advanced settings** (optional) — `max_iterations` = `6`, `handle_exception` = `continue`,
+   `max_consecutive_failures` = `5`.
+8. **Save** to create the agent.
 
 <details>
 <summary><strong>Option B</strong> — create the agent with a <code>CREATE AGENT</code> statement</summary>
