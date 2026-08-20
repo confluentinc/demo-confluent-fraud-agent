@@ -343,8 +343,8 @@ at the model you created in section 3 (need the name? run `SHOW MODELS;`).
 
    <img src="images/workshop/6_step6_3.png" alt="Add agent tools — select the three tools and click Add" width="500">
 
-   > [!WARNING]
-   > Don't forget to click **Add** — otherwise the tools won't be attached to the agent.
+> [!WARNING]
+> Don't forget to click **Add** — otherwise the tools won't be attached to the agent.
 
 7. Set:
    - `max_iterations` = `6`
