@@ -80,7 +80,7 @@ you'll paste into `workshop.tfvars`.
    or click **Download**). These are your `confluent_cloud_api_key` and `confluent_cloud_api_secret`
    in `workshop.tfvars`.
 
-## 2. Deploy the infrastructure (~8–12 min)
+## 2. Deploy the infrastructure (~10–12 min)
 
 1. Clone the repo and enter the `terraform` directory:
 
@@ -96,7 +96,14 @@ you'll paste into `workshop.tfvars`.
    ```
 
 3. Edit **`workshop.tfvars`** and fill in your 4 credentials (`deploy_flink_pipeline` is already
-   set to `false`).
+   set to `false`):
+
+   | Variable | Where to get it |
+   |---|---|
+   | `confluent_cloud_api_key` | The **Key** from [Set up Confluent Cloud → Step 3](#step-3--create-a-cloud-api-key--secret) above |
+   | `confluent_cloud_api_secret` | The **Secret** from the same step |
+   | `aws_access_key_id` | Your AWS IAM user's access key ID (Bedrock access) |
+   | `aws_secret_access_key` | Your AWS IAM user's secret access key |
 
 4. Deploy:
 
@@ -109,7 +116,7 @@ Bedrock connection, the tools JAR artifact, and the **4 tables** — but **not**
 pipeline. It also writes a ready-to-use `.env` for the producer and dashboard.
 
 > [!NOTE]
-> `terraform apply` takes **~8–12 minutes** — provisioning the Kafka cluster is the slow part.
+> Grab a coffee ☕ — it takes **5–7 minutes** to deploy.
 
 ## 3. Connect the model — give the agent a brain
 
@@ -271,11 +278,87 @@ GROUP BY `user_id`, `window_start`, `window_end`;
 Now combine the brain, the hands, and a **job description**. The prompt is where the use-case
 logic lives: it tells the agent how to score risk from 0–100, which tools to call at each score
 band (freeze + notify when risk is high, flag + notify when medium, and so on), and to return a
-single strict-JSON verdict you can store. Read the prompt below — it *is* the fraud policy.
+single strict-JSON verdict you can store — it *is* the fraud policy.
 
 ### 🎯 Challenge: Give the agent its model
 
-**Your turn.** Fill in the `<model-name>` the agent runs on.
+Build the agent **either** way below — the result is the same. Your challenge in both: point it
+at the model you created in section 3 (need the name? run `SHOW MODELS;`).
+
+**Option A — Streaming Agents UI**
+
+1. In the Flink Workspace left panel, expand your cluster, find **Agents**, and click the **+**.
+   (Or from your environment page, open **Streaming agents → Create streaming agent**.)
+
+   <img src="images/workshop/6_step6_1.png" alt="Left panel — Agents → Create an agent" width="450">
+
+2. **Agent name** — `fraud_detection_agent`.
+3. 🎯 **Model** — pick the model you created from the dropdown.
+4. **Instructions** — paste this fraud-policy prompt:
+
+  ```text
+  You are a real-time fraud detection analyst.
+
+  You receive a plain-text activity profile for ONE user over a short time window. It lists
+  the user id and that user's recent transactions (each shown as "txn <transaction_id>: $<amount> at <merchant> ..."),
+  recent logins (location, device, ip), and recent account changes (field, old value, new value).
+
+  Analyze for these fraud signals:
+  1. Geographic impossibility: login and transaction in distant cities within minutes
+  2. Velocity anomalies: many transactions in a short period
+  3. Account takeover: email/password change followed by a large purchase
+  4. Unusual amounts: transactions much larger than others
+  5. Device/IP anomalies: new devices combined with other signals
+
+  SCORING GUIDE - use the FULL range:
+  - 90-100: Multiple strong signals combined (e.g. geo-impossible + account takeover + large amount)
+  - 70-89: One strong signal with supporting evidence (e.g. geo-impossible travel alone)
+  - 45-69: Suspicious patterns that need investigation (e.g. unusual amount or velocity alone)
+  - 20-44: Mildly unusual but likely legitimate (e.g. new device from same city)
+  - 0-19: Normal activity, no fraud signals detected
+
+  TOOLS - DECIDE THE SCORE FIRST, THEN ACT. Determine risk_score before calling any tool, and
+  only call the tools the score warrants below. Make every tool call up front. Once you call a
+  tool, treat it as final: never reconsider it, apologize for it, or reverse it in text.
+  - If risk_score >= 80: call freeze_account_tool(user_id, reason) and notify_user_tool(user_id, message)
+  - If risk_score 50-79: call flag_transaction_tool(transaction_id, reason) for each suspicious transaction and notify_user_tool(user_id, message)
+  - If risk_score 20-49: call notify_user_tool(user_id, message)
+  - If risk_score < 20: do NOT call any tool.
+  Record the tools you actually called in "actions_taken".
+
+  CRITICAL RULES:
+  - Copy the EXACT "user_id" string from the input. Do NOT change it.
+  - Copy EXACT "transaction_id" strings from the input into "flagged_transaction_ids". Do NOT invent IDs.
+  - If no transactions exist, set "flagged_transaction_ids" to an empty list.
+  - Your FINAL message must be ONLY the single JSON object below: no preamble, no commentary, no
+    self-corrections, no markdown, no code fences. Put all explanation inside "reasoning", nowhere else.
+  {"user_id": "<copy from input>", "risk_score": <0-100 integer>, "reasoning": "<one or two sentences>", "actions_taken": ["freeze_account"|"flag_transaction"|"notify_user"], "flagged_transaction_ids": ["<copied transaction ids>"]}
+  ```
+
+   <img src="images/workshop/6_step6_2.png" alt="Create Streaming Agent — name, instructions, model" width="500">
+
+5. Click on **Advanced Configurations**.
+6. Click on **Add new Tool**, add all three — `flag_transaction_tool`, `freeze_account_tool`,
+   `notify_user_tool` — then click **Add**.
+
+   <img src="images/workshop/6_step6_3.png" alt="Add agent tools — select the three tools and click Add" width="500">
+
+> [!WARNING]
+> Don't forget to click **Add** — otherwise the tools won't be attached to the agent.
+
+7. Set:
+   - `max_iterations` = `6`
+   - `handle_exception` = `continue`
+   - `max_consecutive_failures` = `5`
+
+   <img src="images/workshop/6_step6_4.png" alt="Advanced configurations — tools table and settings" width="500">
+
+8. Click on **Create agent** to create the agent.
+
+<details>
+<summary><strong>Option B</strong> — create the agent with a <code>CREATE AGENT</code> statement</summary>
+
+Fill in the `<model-name>` the agent runs on.
 
 ```sql
 CREATE AGENT `fraud_detection_agent`
@@ -322,15 +405,6 @@ WITH (
   'handle_exception' = 'continue',
   'max_consecutive_failures' = '5'
 );
-```
-
-<details>
-<summary>Hint — how do I find the model name?</summary>
-
-You created the model in section 3. List your models with:
-
-```sql
-SHOW MODELS;
 ```
 </details>
 
@@ -394,19 +468,24 @@ activity and watch the agent score it in real time. Two local apps do this, both
   and account changes into your topics;
 - the **dashboard** — the fraud analyst's screen, showing the agent's alerts as they land.
 
-**1. Install dependencies** (once, from the repo root):
+**1. Open a new terminal and `cd` into the repo root directory.**
+
+**2. Install dependencies:**
 
 ```bash
 python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
 ```
 
-**2. Start the producer** in a new terminal:
+**3. Start the producer:**
 
 ```bash
 python producer/generate_events.py
 ```
 
-**3. Confirm events are flowing** — back in the Flink UI, query the input topics:
+> [!NOTE]
+> Leave this running and open a new terminal tab for the next steps.
+
+**4. Confirm events are flowing** — back in the Flink Workspace, query the input topics:
 
 ```sql
 SELECT * FROM transactions LIMIT 5;
@@ -426,7 +505,7 @@ SELECT * FROM account_changes LIMIT 5;
 
 <img src="images/workshop/8_step8_3.png" alt="account_changes query results" width="700">
 
-**4. Confirm the activity profiles are being built** — each row is one user's session-window
+**5. Confirm the activity profiles are being built** — each row is one user's session-window
 profile, the exact text the agent scores:
 
 ```sql
@@ -435,7 +514,7 @@ SELECT * FROM activity_profiles;
 
 <img src="images/workshop/8_step8_4.png" alt="activity_profiles query results" width="700">
 
-**5. Add another terminal and start the dashboard** (activate the venv there first):
+**6. Add another terminal and start the dashboard:**
 
 ```bash
 source venv/bin/activate
@@ -465,7 +544,8 @@ Agent scores every burst and acts in seconds. Not bad for an hour's work.
 
 ## 9. Cleanup
 
-Tear it all down when you're done (so the credits last):
+Stop the producer by running **Ctrl+C** in its terminal. Then tear it all down (so the credits
+last):
 
 ```bash
 cd terraform && terraform destroy -var-file=workshop.tfvars -auto-approve
