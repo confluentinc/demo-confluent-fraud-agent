@@ -278,11 +278,31 @@ GROUP BY `user_id`, `window_start`, `window_end`;
 Now combine the brain, the hands, and a **job description**. The prompt is where the use-case
 logic lives: it tells the agent how to score risk from 0–100, which tools to call at each score
 band (freeze + notify when risk is high, flag + notify when medium, and so on), and to return a
-single strict-JSON verdict you can store. Read the prompt below — it *is* the fraud policy.
+single strict-JSON verdict you can store — it *is* the fraud policy.
 
-### 🎯 Challenge: Give the agent its model
+Confluent Cloud gives you two ways to build the agent: the guided **Streaming Agents UI**, or a
+`CREATE AGENT` SQL statement. Use whichever you like — the result is the same.
 
-**Your turn.** Fill in the `<model-name>` the agent runs on.
+### Build it in the Streaming Agents UI
+
+1. In the Flink Workspace left panel, expand your cluster, find **Agents**, and click the **+**.
+   (Or from your environment page, open **Streaming agents → Create streaming agent**.)
+2. **Database** — select your cluster (`flink_database`).
+3. **Agent name** — `fraud_detection_agent`.
+4. **Model** — select `fraud_model` (the model you created in section 3).
+5. **Instructions** — paste the fraud-policy prompt: expand *Prefer SQL?* below and copy the
+   text between the single quotes after `USING PROMPT`.
+6. **Tools** — add all three: `flag_transaction_tool`, `freeze_account_tool`,
+   `notify_user_tool`.
+7. **Advanced settings** (optional) — `max_iterations` = `6`, `handle_exception` = `continue`,
+   `max_consecutive_failures` = `5`.
+8. **Save** to create the agent.
+
+<details>
+<summary>Prefer SQL? Create the agent with a <code>CREATE AGENT</code> statement</summary>
+
+**🎯 Challenge:** fill in the `<model-name>` the agent runs on (hint: run `SHOW MODELS;` — you
+created it in section 3).
 
 ```sql
 CREATE AGENT `fraud_detection_agent`
@@ -329,15 +349,6 @@ WITH (
   'handle_exception' = 'continue',
   'max_consecutive_failures' = '5'
 );
-```
-
-<details>
-<summary>Hint — how do I find the model name?</summary>
-
-You created the model in section 3. List your models with:
-
-```sql
-SHOW MODELS;
 ```
 </details>
 

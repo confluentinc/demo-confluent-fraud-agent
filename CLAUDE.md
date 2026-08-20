@@ -91,7 +91,10 @@ cd tools-udf && ./build.sh    # then commit target/fraud-tools.jar
   `USING FUNCTION` name replaced by a `<function-name>` placeholder (a `<details>` hint points
   participants at `SHOW USER FUNCTIONS`). Likewise the agent's `USING MODEL` is a `<model-name>`
   placeholder challenge (hint: `SHOW MODELS`), and the detect `INSERT`'s `AI_RUN_AGENT(...)` uses
-  an `<agent-name>` placeholder challenge (hint: `SHOW AGENTS`). The intended differences from `flink.tf`: (a) the windowing
+  an `<agent-name>` placeholder challenge (hint: `SHOW AGENTS`). Section 6 presents the agent two
+  ways: a guided **Streaming Agents UI** path (primary) and the `CREATE AGENT` SQL inside a
+  `<details>` ("Prefer SQL?"); the UI path points participants at that SQL block for the prompt
+  text, so the prompt lives in exactly one place. The intended differences from `flink.tf`: (a) the windowing
   statement is preceded by `SET 'sql.tables.scan.idle-timeout' = '5 s';` (in `flink.tf` that
   lives in `module.profiles`'s `extra_properties`); (b) the windowing statement is also preceded
   by `SET 'sql.tables.scan.startup.mode' = 'latest-offset';` — **workshop only** (demo
