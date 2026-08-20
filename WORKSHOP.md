@@ -282,23 +282,63 @@ single strict-JSON verdict you can store — it *is* the fraud policy.
 
 ### 🎯 Challenge: Give the agent its model
 
-Build the agent **either** way below — the result is the same. In both, you point it at the
-model you created in section 3 (list your models with `SHOW MODELS;`).
+Build the agent **either** way below — the result is the same. Your challenge in both: point it
+at the model you created in section 3 (need the name? run `SHOW MODELS;`).
 
 **Option A — Streaming Agents UI**
 
 1. In the Flink Workspace left panel, expand your cluster, find **Agents**, and click the **+**.
    (Or from your environment page, open **Streaming agents → Create streaming agent**.)
-2. **Database** — select your cluster (`flink_database`).
+2. **Database** — select your **Kafka cluster** (`flink_database`).
 3. **Agent name** — `fraud_detection_agent`.
-4. **Model** — select `fraud_model`.
-5. **Instructions** — paste the fraud-policy prompt: expand *Option B* below and copy the
-   text between the single quotes after `USING PROMPT`.
+4. 🎯 **Model** — pick the model you created in section 3. Need the name? Run `SHOW MODELS;`.
+5. **Instructions** — paste the fraud-policy prompt shown below these steps.
 6. **Tools** — add all three: `flag_transaction_tool`, `freeze_account_tool`,
    `notify_user_tool`.
 7. **Advanced settings** (optional) — `max_iterations` = `6`, `handle_exception` = `continue`,
    `max_consecutive_failures` = `5`.
 8. **Save** to create the agent.
+
+Fraud-policy prompt for step 5:
+
+```text
+You are a real-time fraud detection analyst.
+
+You receive a plain-text activity profile for ONE user over a short time window. It lists
+the user id and that user's recent transactions (each shown as "txn <transaction_id>: $<amount> at <merchant> ..."),
+recent logins (location, device, ip), and recent account changes (field, old value, new value).
+
+Analyze for these fraud signals:
+1. Geographic impossibility: login and transaction in distant cities within minutes
+2. Velocity anomalies: many transactions in a short period
+3. Account takeover: email/password change followed by a large purchase
+4. Unusual amounts: transactions much larger than others
+5. Device/IP anomalies: new devices combined with other signals
+
+SCORING GUIDE - use the FULL range:
+- 90-100: Multiple strong signals combined (e.g. geo-impossible + account takeover + large amount)
+- 70-89: One strong signal with supporting evidence (e.g. geo-impossible travel alone)
+- 45-69: Suspicious patterns that need investigation (e.g. unusual amount or velocity alone)
+- 20-44: Mildly unusual but likely legitimate (e.g. new device from same city)
+- 0-19: Normal activity, no fraud signals detected
+
+TOOLS - DECIDE THE SCORE FIRST, THEN ACT. Determine risk_score before calling any tool, and
+only call the tools the score warrants below. Make every tool call up front. Once you call a
+tool, treat it as final: never reconsider it, apologize for it, or reverse it in text.
+- If risk_score >= 80: call freeze_account_tool(user_id, reason) and notify_user_tool(user_id, message)
+- If risk_score 50-79: call flag_transaction_tool(transaction_id, reason) for each suspicious transaction and notify_user_tool(user_id, message)
+- If risk_score 20-49: call notify_user_tool(user_id, message)
+- If risk_score < 20: do NOT call any tool.
+Record the tools you actually called in "actions_taken".
+
+CRITICAL RULES:
+- Copy the EXACT "user_id" string from the input. Do NOT change it.
+- Copy EXACT "transaction_id" strings from the input into "flagged_transaction_ids". Do NOT invent IDs.
+- If no transactions exist, set "flagged_transaction_ids" to an empty list.
+- Your FINAL message must be ONLY the single JSON object below: no preamble, no commentary, no
+  self-corrections, no markdown, no code fences. Put all explanation inside "reasoning", nowhere else.
+{"user_id": "<copy from input>", "risk_score": <0-100 integer>, "reasoning": "<one or two sentences>", "actions_taken": ["freeze_account"|"flag_transaction"|"notify_user"], "flagged_transaction_ids": ["<copied transaction ids>"]}
+```
 
 <details>
 <summary><strong>Option B</strong> — create the agent with a <code>CREATE AGENT</code> statement</summary>
