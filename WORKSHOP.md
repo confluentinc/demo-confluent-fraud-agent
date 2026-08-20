@@ -338,13 +338,17 @@ at the model you created in section 3 (need the name? run `SHOW MODELS;`).
    <img src="images/workshop/6_step6_2.png" alt="Create Streaming Agent — name, instructions, model" width="500">
 
 5. Click on **Advanced Configurations**.
-6. Click on **Add new Tool** — add all three: `flag_transaction_tool`, `freeze_account_tool`, `notify_user_tool`.
+6. Click on **Add new Tool**, add all three — `flag_transaction_tool`, `freeze_account_tool`,
+   `notify_user_tool` — then click **Add**.
+
+   <img src="images/workshop/6_step6_3.png" alt="Add agent tools — select the three tools and click Add" width="500">
+
 7. Set:
    - `max_iterations` = `6`
    - `handle_exception` = `continue`
    - `max_consecutive_failures` = `5`
 
-   <img src="images/workshop/6_step6_3.png" alt="Advanced configurations — agent tools and settings" width="500">
+   <img src="images/workshop/6_step6_4.png" alt="Advanced configurations — tools table and settings" width="500">
 
 8. Click on **Create agent** to create the agent.
 
