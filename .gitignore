@@ -11,6 +11,9 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
+.ruff_cache/
+build/
+dist/
 
 # --- Terraform ---
 **/.terraform/
@@ -36,7 +39,16 @@ dependency-reduced-pom.xml
 
 # --- Editor / OS ---
 .claude/
+.codex/config.toml*
 .idea/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# --- uv deploy scripts ---
+credentials.env
+API-KEYS-AWS.md
+*.tfvars.backup
+tmp/
+node_modules/
+package-lock.json

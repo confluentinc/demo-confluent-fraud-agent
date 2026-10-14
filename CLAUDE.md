@@ -38,31 +38,39 @@ a node in Stream Lineage). All Flink/agent/model/tool SQL is defined inline in
 | `terraform/main.tf` | Env, cluster, Schema Registry, compute pool, service account, API keys, ACLs, and all fixed `locals` (region, model id, names). |
 | `terraform/flink.tf` | Bedrock connection, tools artifact upload, and every Flink statement: source tables, `CREATE MODEL`, `CREATE FUNCTION`/`CREATE TOOL` ×3, `CREATE AGENT`, the `create-activity-profiles` windowing statement (`module.profiles`), and the `detect-fraud` agent `INSERT` (`module.detect`). |
 | `terraform/connect.tf` | Writes the repo-root `.env` consumed by the local apps. |
-| `terraform/variables.tf` | The **4** required inputs (Confluent key/secret, AWS Bedrock IAM key/secret) + the `deploy_flink_pipeline` mode flag (default `true`). |
-| `terraform/workshop.tfvars.example` | Workshop-mode preset (`deploy_flink_pipeline = false`); copy to `workshop.tfvars` and `apply -var-file=`. |
+| `terraform/variables.tf` | The **4** required inputs (Confluent key/secret, `aws_bedrock_access_key`/`aws_bedrock_secret_key`) + optional `aws_session_token` + the `deploy_flink_pipeline` mode flag (default `true`). |
+| `terraform/outputs.tf` | Includes the shared-name outputs (`app_manager_*_api_key`, `confluent_*_endpoint`, …) that `scripts/mcp_setup.py` reads — same names as `terraform/core` in the sibling streaming-agent repos. |
+| `scripts/` | Flat package behind the `uv run` entry points in `pyproject.toml`: `deploy`, `destroy`, `dashboard`, `setup-mcp`, `setup-rtce`, `api-keys`, `test-bedrock` (+ shared helpers `credentials`, `login_checks`, `terraform`, `terraform_runner`, `tfvars`, `ui`). Ported from the Streamhouse / quickstart-streaming-agents repos; keep them shaped alike. |
+| `credentials.env` | Gitignored; written by `uv run deploy` (template: `credentials.env.example`). Deploy generates `terraform/terraform.tfvars` from it on every run. |
+| `terraform/rtce.tf` | Read-only RTCE service account for `uv run setup-rtce` (not used by the pipeline; kept for later). |
 | `terraform/modules/flink-statement/` | Thin reusable wrapper around `confluent_flink_statement`. |
 | `tools-udf/` | Java UDF tools (`flag_transaction`, `freeze_account`, `notify_user`) + the committed `target/fraud-tools.jar`. |
 | `producer/generate_events.py` | Synthetic event generator (Avro + SASL_SSL). |
 | `dashboard/app.py` | Streamlit dashboard (Avro + SASL_SSL); Recent Fraud Alerts table shows severity/user/score/time/reasoning/**actions**. |
 | `agent/models.py` | Pydantic data-model reference only — not imported at runtime. |
 | `README.md` | Landing page: use-case + architecture + shared prerequisites, then "Choose your path" linking to `DEMO.md` / `WORKSHOP.md`. |
-| `DEMO.md` | Demo path: one-command `terraform apply` deploy steps; links to `WALKTHROUGH.md`. |
-| `WORKSHOP.md` | Self-service workshop path: deploy infra + tables + functions via `deploy_flink_pipeline=false`, then run the hands-on statements (model, tools, agent, windowing, detect) by hand in the Flink UI. Inline SQL must match `flink.tf`. |
+| `DEMO.md` | Demo path: one-command `uv run deploy` steps; links to `WALKTHROUGH.md`. |
+| `WORKSHOP.md` | Self-service workshop path: deploy infra + tables + functions via `uv run deploy --workshop` (`deploy_flink_pipeline=false`), then run the hands-on statements (model, tools, agent, windowing, detect) by hand in the Flink UI. Inline SQL must match `flink.tf`. |
 | `WALKTHROUGH.md` | ~15-min presenter walkthrough (Stream Lineage → Flink job → dashboard); screenshots in `images/demo/`. Linked from `DEMO.md`. |
 
 ## Commands
 
 ```bash
-# Deploy everything (also writes .env)
-cd terraform && terraform init && terraform apply
+# Deploy everything (prompts once, saves credentials.env, writes tfvars + .env)
+uv run deploy                 # --workshop: workshop mode; --testing/--automated: non-interactive from credentials.env
 
 # Run apps (after deploy)
-pip install -r requirements.txt
-python producer/generate_events.py
-streamlit run dashboard/app.py
+uv run producer
+uv run dashboard              # headless streamlit + opens the browser; --no-browser for bots
+
+# Give a coding agent the Confluent MCP server (Flink SQL, topics) for this deployment
+uv run setup-mcp --agent claude   # then restart Claude Code
 
 # Tear down
-cd terraform && terraform destroy
+uv run destroy                # --testing: non-interactive
+
+# Tests + lint
+uv run pytest && uv run ruff check scripts tests
 
 # Validate Terraform without credentials
 cd terraform && terraform fmt -recursive && terraform validate
@@ -77,7 +85,8 @@ cd tools-udf && ./build.sh    # then commit target/fraud-tools.jar
   fixed in `terraform/main.tf` `locals`. Don't add user-facing variables without reason.
   (The one exception is the `deploy_flink_pipeline` mode flag below.)
 - **Two deployment paths via `deploy_flink_pipeline`.** Default `true` = the one-command
-  demo (deploys everything). `false` (see `terraform/workshop.tfvars.example`) = workshop
+  demo (deploys everything). `false` (`uv run deploy --workshop`, persisted as
+  `TF_VAR_deploy_flink_pipeline=false` in `credentials.env`) = workshop
   mode: Terraform deploys infra + the Bedrock connection + tools JAR + the 4 tables **+ the 3
   `CREATE FUNCTION` statements** (`fn_*`, ungated — they reference the artifact id, so we don't
   make participants handle it). The 7 hands-on modules (`model`, `tool_*`, `agent`, `profiles`,
@@ -154,10 +163,12 @@ cd tools-udf && ./build.sh    # then commit target/fraud-tools.jar
   `terraform apply -replace="module.<name>.confluent_flink_statement.this"` (e.g. `module.detect`
   or `module.profiles`). A replaced INSERT/CTAS reprocesses from earliest (duplicate rows; fine
   for the demo).
-- **Streamlit's first-run email prompt blocks headless/background runs.** Write
-  `~/.streamlit/credentials.toml` with `[general]\nemail = ""` and run with
-  `--server.headless true`, then open `http://localhost:8501` manually.
-- **You can't `terraform apply` without the user's Confluent + AWS credentials.** Validate
+- **Streamlit's first-run email prompt blocks non-headless runs.** `uv run dashboard` always
+  passes `--server.headless true` (no prompt) and opens the browser itself once
+  `/_stcore/health` is up; `--no-browser` for background runs.
+- **Never run full `terraform apply` for a targeted change** — use `-target`. `uv run deploy` is the
+  full-stack path.
+- **You can't deploy without the user's Confluent + AWS credentials** (`credentials.env`). Validate
   with `terraform validate`.
 - **Bedrock model access:** the IAM user must have model access granted in the Bedrock
   console for the configured Claude model in `us-east-1`.
@@ -172,20 +183,22 @@ cd tools-udf && ./build.sh    # then commit target/fraud-tools.jar
 
 ## Testing / verifying end-to-end
 
-All checks below assume `terraform apply` has run (so `.env` exists) and the venv is set up
-(`python3 -m venv venv && ./venv/bin/pip install -r requirements.txt`). Use `./venv/bin/python`
-and load `.env` for connection config.
+All checks below assume `uv run deploy` has run (so `.env` exists). Use `uv run python`
+and load `.env` for connection config. With `uv run setup-mcp --agent claude` (and a Claude Code
+restart) the `confluent-cloud-mcp-server` MCP tools can list statements, run Flink SQL, and
+consume topics directly — prefer those over the REST/consumer snippets below.
 
 ### 1. Static checks (no credentials needed)
 ```bash
 cd terraform && terraform fmt -recursive && terraform validate
-python3 -m py_compile producer/generate_events.py dashboard/app.py
+uv run pytest && uv run ruff check scripts tests
+uv run python -m py_compile producer/generate_events.py dashboard/app.py
 unzip -l tools-udf/target/fraud-tools.jar   # 3 classes: FlagTransaction/FreezeAccount/NotifyUser
 ```
 
 ### 2. Deploy and confirm all statements are healthy
 ```bash
-cd terraform && terraform init && terraform apply -auto-approve   # 31 resources; writes ../.env
+uv run deploy --automated   # non-interactive from credentials.env; writes .env, registers the MCP server
 ```
 Confirm Flink statements via the REST API (the CLI session often expires). Pull the Flink key
 + endpoint from state, then list statement phases — DDL (`create-table-*`, `create-model-*`,
@@ -193,7 +206,7 @@ Confirm Flink statements via the REST API (the CLI session often expires). Pull 
 continuous statements `create-activity-profiles-*` and `detect-fraud-*` should be `RUNNING`:
 ```bash
 cd terraform && terraform show -json > /tmp/tf.json
-python3 - <<'PY'
+uv run python - <<'PY'
 import json
 d=json.load(open("/tmp/tf.json")); res={}
 def walk(m):
@@ -207,15 +220,15 @@ PY
 # then (substitute the printed values):
 curl -s -u "$FLINK_KEY:$FLINK_SECRET" \
   "$FLINK_REST/sql/v1/organizations/$ORG/environments/$ENV/statements?page_size=50" \
-  | python3 -c "import sys,json;[print(s['name'].ljust(40),s['status']['phase'],'|',(s['status'].get('detail') or '')[:80]) for s in json.load(sys.stdin)['data']]"
+  | uv run python -c "import sys,json;[print(s['name'].ljust(40),s['status']['phase'],'|',(s['status'].get('detail') or '')[:80]) for s in json.load(sys.stdin)['data']]"
 ```
 
 ### 3. Run the producer, then verify data + alerts flow
 ```bash
-./venv/bin/python producer/generate_events.py   # leave running (background ok)
+uv run producer   # leave running (background ok)
 ```
 Consume the four topics to confirm input is flowing AND alerts are produced. Save as
-`/tmp/verify.py` and run with `./venv/bin/python /tmp/verify.py`:
+`/tmp/verify.py` and run with `uv run python /tmp/verify.py`:
 ```python
 import os, json, collections, time
 from dotenv import load_dotenv
@@ -261,8 +274,7 @@ regressed — see Gotchas. Topic partition counts / totals:
 
 ### 5. Dashboard
 ```bash
-printf '[general]\nemail = ""\n' > ~/.streamlit/credentials.toml   # one-time, skips prompt
-./venv/bin/streamlit run dashboard/app.py --server.headless true --server.port 8501
+uv run dashboard --no-browser   # headless, so no email prompt
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8501/_stcore/health   # 200
 ```
 Open `http://localhost:8501`. The dashboard reads from `latest`, so it shows alerts produced
@@ -270,5 +282,5 @@ after it starts — keep the producer running and allow ~1 min for a window-firi
 
 ### 6. Teardown
 ```bash
-cd terraform && terraform destroy -auto-approve
+uv run destroy --testing
 ```

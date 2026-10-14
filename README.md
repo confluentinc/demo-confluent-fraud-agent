@@ -48,7 +48,8 @@ Everything except the producer and dashboard runs in Confluent Cloud — there i
 
 - **[Terraform](https://github.com/hashicorp/terraform)**
 - **[Git](https://git-scm.com/)**
-- **[Python 3.11+](https://www.python.org/downloads/)**
+- **[uv](https://docs.astral.sh/uv/getting-started/installation/)** (installs Python and the dependencies for you)
+- **[Confluent CLI](https://docs.confluent.io/confluent-cli/current/install.html)**
 
 <details>
 <summary>Installation commands (Mac / Windows)</summary>
@@ -56,13 +57,13 @@ Everything except the producer and dashboard runs in Confluent Cloud — there i
 **Mac (Homebrew):**
 
 ```bash
-brew install git python && brew tap hashicorp/tap && brew install hashicorp/tap/terraform
+brew install git uv confluentinc/tap/cli && brew tap hashicorp/tap && brew install hashicorp/tap/terraform
 ```
 
 **Windows (winget, PowerShell):**
 
 ```powershell
-winget install Git.Git Python.Python.3.12 Hashicorp.Terraform
+winget install Git.Git astral-sh.uv ConfluentInc.Confluent-CLI Hashicorp.Terraform
 ```
 
 **Optional — maintainers only, to rebuild the UDF JAR:**
@@ -83,8 +84,8 @@ This repo can be run two ways. Both start from the same [Prerequisites](#prerequ
 
 | Path | What you do | Time | Guide |
 |------|-------------|------|-------|
-| **🎬 Demo** | One `terraform apply` deploys **everything** — infra *and* the full Flink AI pipeline. You just run the producer and dashboard. | ~15 min | **[DEMO.md](DEMO.md)** |
-| **🛠️ Self-service workshop** | Terraform deploys infra + the 4 tables; **you build the AI pipeline by hand** in the Flink UI (model → functions → tools → agent → windowing → detection). | ~1 hour | **[WORKSHOP.md](WORKSHOP.md)** |
+| **🎬 Demo** | One `uv run deploy` deploys **everything** — infra *and* the full Flink AI pipeline. You just run the producer and dashboard. | ~15 min | **[DEMO.md](DEMO.md)** |
+| **🛠️ Self-service workshop** | `uv run deploy --workshop` deploys infra + the 4 tables; **you build the AI pipeline by hand** in the Flink UI (model → functions → tools → agent → windowing → detection). | ~1 hour | **[WORKSHOP.md](WORKSHOP.md)** |
 
 **New here or short on time?** Take the [Demo path](DEMO.md). **Want to learn how Streaming
 Agents are built, statement by statement?** Take the [Workshop path](WORKSHOP.md).
@@ -101,12 +102,12 @@ demo-confluent-fraud-agent/
 │   ├── flink.tf                     # Bedrock connection, tools artifact, and all Flink statements
 │   ├── connect.tf                   # Writes .env for the local apps
 │   ├── variables.tf                 # The 4 required inputs (+ deploy_flink_pipeline flag)
-│   ├── workshop.tfvars.example      # Workshop-mode preset (deploy_flink_pipeline = false)
 │   └── modules/flink-statement/     # Reusable confluent_flink_statement wrapper
 ├── tools-udf/                       # Java UDF tools (flag/freeze/notify) + pre-built JAR
 ├── producer/generate_events.py      # Synthetic event generator
 ├── dashboard/app.py                 # Streamlit real-time dashboard
-└── requirements.txt                 # Local app dependencies
+├── scripts/                         # `uv run` commands: deploy, destroy, dashboard, setup-mcp, setup-rtce, api-keys, test-bedrock
+└── pyproject.toml                   # Dependencies + `uv run` entry points
 ```
 
 ## How the agent's tools work
@@ -127,10 +128,23 @@ SELECT * FROM activity_profiles;            -- should fill (windowing works)
 SELECT * FROM fraud_alerts WHERE risk_score >= 70;   -- the high-risk verdicts
 ```
 
+## Utility commands
+
+| Command | What it does |
+|---------|--------------|
+| `uv run deploy` | Prompts for credentials (saved to the gitignored `credentials.env`), then deploys. `--workshop` skips the hands-on AI pipeline statements. |
+| `uv run producer` | Streams synthetic events (Ctrl+C to stop). |
+| `uv run dashboard` | Opens the live dashboard at http://localhost:8501. |
+| `uv run setup-mcp` | Registers the [Confluent MCP server](https://github.com/confluentinc/mcp-confluent) with Claude Code or Codex for this deployment, so your coding agent can list topics and run Flink SQL. Needs Node.js. |
+| `uv run setup-rtce` | Enables [Real-Time Context Engine](https://docs.confluent.io/cloud/current/ai/real-time-context-engine.html) on the demo topics and registers its MCP server with your coding agent. Not used by the demo yet. |
+| `uv run test-bedrock` | Checks the AWS key in `credentials.env` can invoke Claude on Bedrock. |
+| `uv run api-keys create` / `destroy` | Workshop organizers: mint (or revoke) a Bedrock-only AWS IAM key. |
+| `uv run destroy` | Tears everything down. |
+
 ## Cleanup
 
 ```bash
-cd terraform && terraform destroy
+uv run destroy
 ```
 
 This removes the entire Confluent Cloud environment (cluster, topics, schemas, Flink resources) in one step.

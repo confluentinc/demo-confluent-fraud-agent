@@ -154,5 +154,5 @@ No model-serving stack, no orchestration, no glue services — just declarative 
 When you're done, remove all the Confluent Cloud resources so you stop incurring cost — see the [Cleanup instructions in the README](README.md#cleanup):
 
 ```bash
-cd terraform && terraform destroy
+uv run destroy
 ```
