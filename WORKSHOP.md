@@ -17,8 +17,9 @@ to a `fraud_alerts` stream.
 
 These are **not** part of the timed hour. Complete them before the workshop:
 
-- [ ] **Confluent Cloud account, a payment method, and a Cloud API key & secret** — the three
-      steps in [Set up Confluent Cloud](#1-set-up-confluent-cloud) below.
+- [ ] **Confluent Cloud account and a payment method (or promo code)** — the two steps in
+      [Set up Confluent Cloud](#1-set-up-confluent-cloud) below. (`uv run deploy` creates the
+      Cloud API key for you.)
 - [ ] **AWS account with an IAM user** that has a long-lived access key & secret and the
       `bedrock:InvokeModel` permission.
 - [ ] **Claude model access enabled in Amazon Bedrock**, region **`us-east-1`** — enable
@@ -64,26 +65,6 @@ credit is used first, so you typically won't be charged during the workshop.
      **+ Promo code**, enter the code you were given, then **Apply**. No credit card is needed.
 
      <img src="images/workshop/0_step2_2.png" alt="Billing and payment — Promos, + Promo code" width="500">
-
-#### Step 3 — Create a Cloud API key & secret
-
-Terraform authenticates with an **org-level "Cloud resource management" API key**. This is what
-you'll paste into `uv run deploy` in the next section.
-
-1. Go directly to **[API keys](https://confluent.cloud/settings/api-keys)** and click **+ Add API key**.
-2. On the **Create API key** form: enter a **Name** (e.g. `Workshop`), select **My account**, and
-   set **Select key scope** to **Cloud resource management**.
-
-<img src="images/workshop/0_step3_1.png" alt="Create API key — My account + Cloud resource management" width="500">
-
-
-> [!NOTE]
-> A service account works too, but then you must grant it the OrganizationAdmin role
-> separately — "My account" already has your permissions.
-
-3. Click **Create API key**, then **copy the Key and Secret** (the secret is shown **only once**,
-   or click **Download**). You'll paste them when `uv run deploy` asks for the
-   **Confluent Cloud API Key** and **Secret**.
 
 ## 2. Deploy the infrastructure (~10–12 min)
 
