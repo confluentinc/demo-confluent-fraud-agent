@@ -15,6 +15,13 @@ to a `fraud_alerts` stream.
 
 ## 0. Prerequisites
 
+> [!TIP]
+> **Provided a workstation by the workshop host?** Skip this section — it's already set up for
+> you. Continue to [Set up Confluent Cloud](#1-set-up-confluent-cloud).
+
+<details>
+<summary><strong>Prerequisites for your own machine</strong> (click to expand)</summary>
+
 These are **not** part of the timed hour. Complete them before the workshop:
 
 - [ ] **Confluent Cloud account and a payment method (or promo code)** — the two steps in
@@ -27,6 +34,8 @@ These are **not** part of the timed hour. Complete them before the workshop:
       without it, `AI_RUN_AGENT` fails with AccessDenied and no alerts appear.
 - [ ] **Tools installed:** [Terraform](https://github.com/hashicorp/terraform),
       [Git](https://git-scm.com/), [Python 3.11+](https://www.python.org/downloads/).
+
+</details>
 
 ## 1. Set up Confluent Cloud
 
