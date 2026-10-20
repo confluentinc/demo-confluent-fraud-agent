@@ -60,8 +60,10 @@ credit is used first, so you typically won't be charged during the workshop.
 
      <img src="images/workshop/0_step2_1.png" alt="Payment details and contacts — Add credit card / bank account" width="500">
 
-   - **Option B — Promo code (provided by the workshop host):** click **Promo code**, enter the
-     code you were given, then **Apply**. No credit card is needed.
+   - **Option B — Promo code (provided by the workshop host):** scroll down to **Promos**, click
+     **+ Promo code**, enter the code you were given, then **Apply**. No credit card is needed.
+
+     <img src="images/workshop/0_step2_2.png" alt="Billing and payment — Promos, + Promo code" width="500">
 
 #### Step 3 — Create a Cloud API key & secret
 
