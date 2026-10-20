@@ -77,7 +77,12 @@ credit is used first, so you typically won't be charged during the workshop.
 
 ## 2. Deploy the infrastructure (~10–12 min)
 
-1. Go to the workshop folder and pull the latest changes:
+1. Open a **Terminal** on your machine — click **Activities** (top-left), then the **Terminal**
+   icon in the dock.
+
+   <img src="images/workshop/2_terminal_1.png" alt="Open Terminal from the dock" width="500">
+
+2. Go to the workshop folder and pull the latest changes:
 
    ```bash
    cd workshop/4548/
@@ -94,7 +99,7 @@ credit is used first, so you typically won't be charged during the workshop.
 
    </details>
 
-2. Deploy in workshop mode:
+3. Deploy in workshop mode:
 
    ```bash
    uv run deploy --workshop
