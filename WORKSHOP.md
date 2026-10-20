@@ -42,10 +42,10 @@ These are **not** part of the timed hour. Complete them before the workshop:
 > creates its own environment *and* cluster for you. Click the Confluent logo (top-left) to
 > exit the wizard.
 
-#### Step 2 — Add a payment method (credit card)
+#### Step 2 — Add a payment method (credit card or promo code)
 
-A card is required for Terraform to create a **Standard** cluster. Free credit is used first, so
-you typically won't be charged during the workshop.
+A payment method or promo code is required for Terraform to create a **Standard** cluster. Free
+credit is used first, so you typically won't be charged during the workshop.
 
 > [!TIP]
 > All new sign-ups get **$400 in free credit** to use within the first 30 days — deploying this
@@ -53,12 +53,15 @@ you typically won't be charged during the workshop.
 
 1. Go directly to **[Billing & payment](https://confluent.cloud/settings/billing/payment)**.
 2. Open the **Payment details and contacts** tab.
-3. Click **Add credit card / bank account**.
+3. Choose **one** of the two options:
 
-<img src="images/workshop/0_step2_1.png" alt="Payment details and contacts — Add credit card / bank account" width="500">
+   - **Option A — Credit card:** click **Add credit card / bank account**, enter your **card
+     details**, then **Save**.
 
+     <img src="images/workshop/0_step2_1.png" alt="Payment details and contacts — Add credit card / bank account" width="500">
 
-4. Enter your **card details**, then **Save**.
+   - **Option B — Promo code (provided by the workshop host):** click **Promo code**, enter the
+     code you were given, then **Apply**. No credit card is needed.
 
 #### Step 3 — Create a Cloud API key & secret
 
