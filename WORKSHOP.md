@@ -84,6 +84,16 @@ credit is used first, so you typically won't be charged during the workshop.
    git pull
    ```
 
+   <details>
+   <summary><strong>Using your own machine?</strong> Clone the repo instead</summary>
+
+   ```bash
+   git clone https://github.com/confluentinc/demo-confluent-fraud-agent.git
+   cd demo-confluent-fraud-agent
+   ```
+
+   </details>
+
 2. Deploy in workshop mode:
 
    ```bash
