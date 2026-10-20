@@ -13,7 +13,7 @@ to a `fraud_alerts` stream.
 > [!NOTE]
 > **Time:** ~1 hour of hands-on work — *if* the prerequisites below are done in advance.
 
-## 0. Prerequisites
+## 0. Prerequisites (skip for TechExchange attendees)
 
 > [!TIP]
 > **Provided a workstation by the workshop host?** Skip this section — it's already set up for
