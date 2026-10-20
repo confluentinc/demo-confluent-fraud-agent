@@ -80,6 +80,8 @@ credit is used first, so you typically won't be charged during the workshop.
 1. Open a **Terminal** on your machine — click **Activities** (top-left), then the **Terminal**
    icon in the dock.
 
+   <img src="images/workshop/2_terminal_0.png" alt="Activities overview with the dock" width="500">
+
    <img src="images/workshop/2_terminal_1.png" alt="Open Terminal from the dock" width="500">
 
 2. Go to the workshop folder and pull the latest changes:
