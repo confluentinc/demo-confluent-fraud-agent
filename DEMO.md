@@ -31,6 +31,12 @@ Bedrock connection, the model, the UDF tools (JAR upload + functions + tools), t
 and the detection query — and writes a ready-to-use `.env` for the local apps. It takes about
 10 minutes.
 
+After deployment, open **Flink → Statements** in the new environment. The model,
+tools, and agent should be **Completed**; `create-activity-profiles-…` and
+`detect-fraud-…` should be **Running**.
+
+![Successful deployment — completed definitions and two running pipeline statements](images/demo/19-deployment-statements.jpg)
+
 ## 3. Start the producer and dashboard
 
 When deploy finishes it offers to start both for you: the producer streams in the background
@@ -54,6 +60,8 @@ transaction ids.
 > The dashboard reads from `latest`, so keep the producer running and allow ~1 minute for
 > the first window-firing batch of alerts. Inspect the running statements and tables in the
 > [Flink workspace](https://confluent.cloud/go/flink).
+
+![Live dashboard — source-event counts, fraud alerts, and risk scores from a clean deployment](images/demo/21-live-dashboard.jpg)
 
 ## Next: the guided walkthrough
 
