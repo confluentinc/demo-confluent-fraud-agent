@@ -128,7 +128,7 @@ The key point here is *shape*: the agent's free-text answer has been parsed into
 
 ![Streamlit dashboard — metrics & charts](images/demo/15-dashboard-overview.png)
 
-**16. On the same dashboard, scroll down to the Recent Fraud Alerts table.** Find a **CRITICAL** row (score 90+) — a geo-impossible or account-takeover case — and read across it: the agent's plain-English **reasoning** and, in the **Actions** column, what it did (`freeze_account` + `notify_user`). This is the payoff — the same verdict you saw in Flink, now in front of a fraud analyst, seconds after the behavior happened.
+**16. On the same dashboard, scroll down to the Recent Fraud Alerts table.** Find a **CRITICAL** row (score 90+) — a geo-impossible or account-takeover case — and read across it: the agent's plain-English **reasoning** and, in the **Actions** column, what it did (`freeze_account` + `notify_user`). This is the payoff — the same verdict you saw in Flink, now in front of a fraud analyst after the agent processes that session.
 
 ![Recent Fraud Alerts — a critical alert](images/demo/16-dashboard-critical-alert.png)
 
@@ -154,5 +154,5 @@ No model-serving stack, no orchestration, no glue services — just declarative 
 When you're done, remove all the Confluent Cloud resources so you stop incurring cost — see the [Cleanup instructions in the README](README.md#cleanup):
 
 ```bash
-cd terraform && terraform destroy
+uv run destroy
 ```

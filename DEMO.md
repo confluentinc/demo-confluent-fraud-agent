@@ -13,57 +13,43 @@ hands-on version where you build the AI pipeline yourself, see [`WORKSHOP.md`](W
 git clone https://github.com/confluentinc/demo-confluent-fraud-agent.git && cd demo-confluent-fraud-agent
 ```
 
-## 2. Provide your four credentials
+## 2. Deploy everything
 
 ```bash
-cd terraform
-cp terraform.tfvars.example terraform.tfvars
-# edit terraform.tfvars — Confluent Cloud key/secret + AWS Bedrock IAM key/secret
+uv run deploy
 ```
 
-These four values are the **only** inputs. Region (`us-east-1`), the Claude model, resource
-names, and sizing are all preset.
+The first run asks for your Confluent Cloud login, a Cloud API key (it can generate one for
+you), and the AWS key that can invoke Bedrock (it detects credentials already in your shell).
+It saves them to `credentials.env` (gitignored), so later runs only ask you to confirm.
 
-## 3. Deploy everything
+These are the **only** inputs. Region (`us-east-1`), the Claude model, resource names, and
+sizing are all preset.
 
-```bash
-terraform init && terraform apply
-```
-
-This provisions the environment, Kafka cluster, Schema Registry, Flink compute pool, the
+Deploy provisions the environment, Kafka cluster, Schema Registry, Flink compute pool, the
 Bedrock connection, the model, the UDF tools (JAR upload + functions + tools), the agent,
-and the detection query — and writes a ready-to-use `.env` for the local apps.
+and the detection query — and writes a ready-to-use `.env` for the local apps. It takes about
+10 minutes.
 
-## 4. Install the Python dependencies
+After deployment, open **Flink → Statements** in the new environment. The model,
+tools, and agent should be **Completed**; `create-activity-profiles-…` and
+`detect-fraud-…` should be **Running**.
 
-<details open>
-<summary>macOS / Linux</summary>
+![Successful deployment — completed definitions and two running pipeline statements](images/demo/19-deployment-statements.jpg)
 
-```bash
-cd .. && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
-```
-</details>
+## 3. Start the producer and dashboard
 
-<details>
-<summary>Windows (PowerShell)</summary>
+When deploy finishes it offers to start both for you: the producer streams in the background
+(log: `tmp/producer.log`) and the dashboard opens at http://localhost:8501.
 
-```powershell
-cd .. ; python -m venv venv ; venv\Scripts\Activate.ps1 ; pip install -r requirements.txt
-```
-</details>
-
-## 5. Start the producer
+To start them yourself, run each in its own terminal:
 
 ```bash
-python producer/generate_events.py
+uv run producer
 ```
 
-## 6. Start the dashboard
-
-In a **second** terminal (activate the venv first), launch the UI at http://localhost:8501:
-
 ```bash
-streamlit run dashboard/app.py
+uv run dashboard
 ```
 
 Watch fraud alerts appear in real time — the injected scenarios surface as high-risk alerts
@@ -75,6 +61,8 @@ transaction ids.
 > the first window-firing batch of alerts. Inspect the running statements and tables in the
 > [Flink workspace](https://confluent.cloud/go/flink).
 
+![Live dashboard — source-event counts, fraud alerts, and risk scores from a clean deployment](images/demo/21-live-dashboard.jpg)
+
 ## Next: the guided walkthrough
 
 Deployed and running? Follow the **[guided walkthrough → `WALKTHROUGH.md`](WALKTHROUGH.md)** —
@@ -85,5 +73,5 @@ live dashboard.
 ## Cleanup
 
 ```bash
-cd terraform && terraform destroy
+uv run destroy
 ```

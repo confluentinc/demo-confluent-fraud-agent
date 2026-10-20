@@ -63,7 +63,7 @@ you typically won't be charged during the workshop.
 #### Step 3 — Create a Cloud API key & secret
 
 Terraform authenticates with an **org-level "Cloud resource management" API key**. This is what
-you'll paste into `workshop.tfvars`.
+you'll paste into `uv run deploy` in the next section.
 
 1. Go directly to **[API keys](https://confluent.cloud/settings/api-keys)** and click **+ Add API key**.
 2. On the **Create API key** form: enter a **Name** (e.g. `Workshop`), select **My account**, and
@@ -77,39 +77,34 @@ you'll paste into `workshop.tfvars`.
 > separately — "My account" already has your permissions.
 
 3. Click **Create API key**, then **copy the Key and Secret** (the secret is shown **only once**,
-   or click **Download**). These are your `confluent_cloud_api_key` and `confluent_cloud_api_secret`
-   in `workshop.tfvars`.
+   or click **Download**). You'll paste them when `uv run deploy` asks for the
+   **Confluent Cloud API Key** and **Secret**.
 
 ## 2. Deploy the infrastructure (~10–12 min)
 
-1. Clone the repo and enter the `terraform` directory:
+1. Clone the repo:
 
    ```bash
    git clone https://github.com/confluentinc/demo-confluent-fraud-agent.git
-   cd demo-confluent-fraud-agent/terraform
+   cd demo-confluent-fraud-agent
    ```
 
-2. Create your vars file from the template:
+2. Deploy in workshop mode:
 
    ```bash
-   cp workshop.tfvars.example workshop.tfvars
+   uv run deploy --workshop
    ```
 
-3. Edit **`workshop.tfvars`** and fill in your 4 credentials (`deploy_flink_pipeline` is already
-   set to `false`):
+   It asks for these and saves them to `credentials.env` (gitignored):
 
-   | Variable | Where to get it |
+   | Prompt | Where to get it |
    |---|---|
-   | `confluent_cloud_api_key` | The **Key** from [Set up Confluent Cloud → Step 3](#step-3--create-a-cloud-api-key--secret) above |
-   | `confluent_cloud_api_secret` | The **Secret** from the same step |
-   | `aws_access_key_id` | Your AWS IAM user's access key ID (Bedrock access) |
-   | `aws_secret_access_key` | Your AWS IAM user's secret access key |
+   | Confluent Cloud email / password | Your Confluent Cloud login (press Enter to skip if you use SSO, then run `confluent login --sso`) |
+   | Generate new Confluent Cloud API keys? | Answer `n` and paste the key from the next row |
+   | Confluent Cloud API Key / Secret | The **Key** and **Secret** from [Set up Confluent Cloud → Step 3](#step-3--create-a-cloud-api-key--secret) above |
+   | AWS Access Key / Secret Key | Your AWS IAM user's access key with Bedrock access (or the one your instructor gave you) |
 
-4. Deploy:
-
-   ```bash
-   terraform init && terraform apply -var-file=workshop.tfvars -auto-approve
-   ```
+   Answer `y` at **Ready to deploy?**.
 
 This provisions the environment, Kafka cluster, Schema Registry, Flink compute pool, the
 Bedrock connection, the tools JAR artifact, and the **4 tables** — but **not** the AI
@@ -470,22 +465,16 @@ activity and watch the agent score it in real time. Two local apps do this, both
 
 **1. Open a new terminal and `cd` into the repo root directory.**
 
-**2. Install dependencies:**
+**2. Start the producer** (`uv` installs the Python dependencies on first run):
 
 ```bash
-python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt
-```
-
-**3. Start the producer:**
-
-```bash
-python producer/generate_events.py
+uv run producer
 ```
 
 > [!NOTE]
 > Leave this running and open a new terminal tab for the next steps.
 
-**4. Confirm events are flowing** — back in the Flink Workspace, query the input topics:
+**3. Confirm events are flowing** — back in the Flink Workspace, query the input topics:
 
 ```sql
 SELECT * FROM transactions LIMIT 5;
@@ -505,7 +494,7 @@ SELECT * FROM account_changes LIMIT 5;
 
 <img src="images/workshop/8_step8_3.png" alt="account_changes query results" width="700">
 
-**5. Confirm the activity profiles are being built** — each row is one user's session-window
+**4. Confirm the activity profiles are being built** — each row is one user's session-window
 profile, the exact text the agent scores:
 
 ```sql
@@ -514,11 +503,10 @@ SELECT * FROM activity_profiles;
 
 <img src="images/workshop/8_step8_4.png" alt="activity_profiles query results" width="700">
 
-**6. Add another terminal and start the dashboard:**
+**5. Add another terminal and start the dashboard:**
 
 ```bash
-source venv/bin/activate
-streamlit run dashboard/app.py   # open http://localhost:8501
+uv run dashboard   # opens http://localhost:8501
 ```
 
 Give it ~1–2 minutes: as each user's activity burst closes its session window, the agent scores
@@ -548,5 +536,5 @@ Stop the producer by running **Ctrl+C** in its terminal. Then tear it all down (
 last):
 
 ```bash
-cd terraform && terraform destroy -var-file=workshop.tfvars -auto-approve
+uv run destroy
 ```

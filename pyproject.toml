@@ -1,0 +1,60 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "demo-confluent-fraud-agent"
+version = "0.1.0"
+description = "Real-time fraud detection with Confluent Intelligence Streaming Agents."
+readme = "README.md"
+authors = [
+    {name = "Brenner Heintz", email = "bheintz@confluent.io"},
+]
+license = {text = "Apache-2.0"}
+requires-python = ">=3.10"
+
+dependencies = [
+    "python-dotenv>=1.0.0,<2.0",
+    "requests>=2.31.0",
+    "confluent-kafka[avro,schema-registry]>=2.3.0",
+    "fastavro>=1.9.0",
+    "boto3>=1.26.0,<2.0",
+    "tomlkit>=0.13.0",
+    "streamlit>=1.30.0",
+    "altair>=5.0.0",
+    "pandas>=2.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.11",
+    "pytest>=8.0.0",
+]
+
+[project.scripts]
+deploy = "scripts.deploy:main"
+destroy = "scripts.destroy:main"
+producer = "producer.generate_events:main"
+datagen = "producer.generate_events:main"
+dashboard = "scripts.dashboard:main"
+setup-mcp = "scripts.mcp_setup:main"
+setup-rtce = "scripts.setup_rtce:main"
+api-keys = "scripts.workshop_key_manager:main"
+test-bedrock = "scripts.test_bedrock_credentials:main"
+
+[project.urls]
+Repository = "https://github.com/confluentinc/demo-confluent-fraud-agent"
+
+[tool.hatch.build.targets.wheel]
+packages = ["scripts", "producer"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B", "UP", "RUF"]

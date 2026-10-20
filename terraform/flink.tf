@@ -21,11 +21,12 @@ resource "confluent_flink_connection" "bedrock" {
     secret = confluent_api_key.flink.secret
   }
 
-  display_name   = "bedrock-fraud-connection"
-  type           = "BEDROCK"
-  endpoint       = local.bedrock_endpoint
-  aws_access_key = var.aws_access_key_id
-  aws_secret_key = var.aws_secret_access_key
+  display_name      = "bedrock-fraud-connection"
+  type              = "BEDROCK"
+  endpoint          = local.bedrock_endpoint
+  aws_access_key    = var.aws_bedrock_access_key
+  aws_secret_key    = var.aws_bedrock_secret_key
+  aws_session_token = var.aws_session_token != "" ? var.aws_session_token : null
 
   depends_on = [
     confluent_api_key.flink,

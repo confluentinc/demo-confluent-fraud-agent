@@ -9,6 +9,7 @@ local demo — only the connection (SASL_SSL) and value serialization (Avro via
 Schema Registry, matching the Flink-created tables) differ.
 """
 
+import argparse
 import os
 import random
 import sys
@@ -25,12 +26,12 @@ from dotenv import load_dotenv
 # Load Terraform-generated connection config.
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
-BOOTSTRAP = os.environ["BOOTSTRAP_SERVERS"]
-KAFKA_API_KEY = os.environ["KAFKA_API_KEY"]
-KAFKA_API_SECRET = os.environ["KAFKA_API_SECRET"]
-SR_URL = os.environ["SCHEMA_REGISTRY_URL"]
-SR_API_KEY = os.environ["SCHEMA_REGISTRY_API_KEY"]
-SR_API_SECRET = os.environ["SCHEMA_REGISTRY_API_SECRET"]
+BOOTSTRAP = os.getenv("BOOTSTRAP_SERVERS", "")
+KAFKA_API_KEY = os.getenv("KAFKA_API_KEY", "")
+KAFKA_API_SECRET = os.getenv("KAFKA_API_SECRET", "")
+SR_URL = os.getenv("SCHEMA_REGISTRY_URL", "")
+SR_API_KEY = os.getenv("SCHEMA_REGISTRY_API_KEY", "")
+SR_API_SECRET = os.getenv("SCHEMA_REGISTRY_API_SECRET", "")
 
 # Topic names match the Flink tables created by Terraform.
 TOPIC_TRANSACTIONS = "transactions"
@@ -260,6 +261,10 @@ FRAUD_SCENARIOS = [fraud_geo_impossible, fraud_account_takeover, fraud_velocity]
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Stream synthetic activity and fraud scenarios to Confluent Cloud")
+    parser.parse_args()
+    if not all((BOOTSTRAP, KAFKA_API_KEY, KAFKA_API_SECRET, SR_URL, SR_API_KEY, SR_API_SECRET)):
+        parser.error("Missing connection configuration. Run `uv run deploy` first to create .env.")
     print(f"Connecting to Confluent Cloud at {BOOTSTRAP}...")
     producer = make_producer()
     serializers = build_serializers()
