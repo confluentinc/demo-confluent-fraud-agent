@@ -494,7 +494,7 @@ SELECT * FROM activity_profiles;
 **5. Add another terminal and start the dashboard:**
 
 ```bash
-uv run dashboard   # opens http://localhost:8501
+uv run dashboard
 ```
 
 Give it ~1–2 minutes: as each user's activity burst closes its session window, the agent scores
