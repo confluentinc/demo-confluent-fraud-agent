@@ -92,6 +92,8 @@ credit is used first, so you typically won't be charged during the workshop.
 
    Answer `y` at **Ready to deploy?**.
 
+   <img src="images/workshop/2_deploy_1.png" alt="uv run deploy — Configuration Summary and Ready to deploy? prompt" width="600">
+
 This provisions the environment, Kafka cluster, Schema Registry, Flink compute pool, the
 Bedrock connection, the tools JAR artifact, and the **4 tables** — but **not** the AI
 pipeline. It also writes a ready-to-use `.env` for the producer and dashboard.
