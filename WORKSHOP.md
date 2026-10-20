@@ -77,11 +77,11 @@ credit is used first, so you typically won't be charged during the workshop.
 
 ## 2. Deploy the infrastructure (~10–12 min)
 
-1. Clone the repo:
+1. Go to the workshop folder and pull the latest changes:
 
    ```bash
-   git clone https://github.com/confluentinc/demo-confluent-fraud-agent.git
-   cd demo-confluent-fraud-agent
+   cd workshop/4548/
+   git pull
    ```
 
 2. Deploy in workshop mode:
