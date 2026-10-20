@@ -105,8 +105,8 @@ you'll paste into `uv run deploy` in the next section.
    | Prompt | Where to get it |
    |---|---|
    | Confluent Cloud email / password | Your Confluent Cloud login: the **email and password you used to sign up** (press Enter to skip if you use SSO, then run `confluent login --sso`) |
-   | Generate new Confluent Cloud API keys? | Answer `n` and paste the key from the next row |
-   | Confluent Cloud API Key / Secret | The **Key** and **Secret** from [Set up Confluent Cloud → Step 3](#step-3--create-a-cloud-api-key--secret) above |
+   | Generate new Confluent Cloud API keys? | Answer `y` — `uv` creates the API key and secret for you |
+   | Confluent Cloud API Key / Secret | Press **Enter** to confirm the key and secret `uv` just created |
    | AWS Access Key / Secret Key | Your AWS IAM user's access key with Bedrock access (or the one your instructor gave you) |
 
    Answer `y` at **Ready to deploy?**.
