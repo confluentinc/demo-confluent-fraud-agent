@@ -15,10 +15,18 @@ to a `fraud_alerts` stream.
 
 ## 0. Prerequisites
 
+> [!TIP]
+> **Provided a workstation by the workshop host?** Skip this section — it's already set up for
+> you. Continue to [Set up Confluent Cloud](#1-set-up-confluent-cloud).
+
+<details>
+<summary><strong>Prerequisites for your own machine</strong> (click to expand)</summary>
+
 These are **not** part of the timed hour. Complete them before the workshop:
 
-- [ ] **Confluent Cloud account, a payment method, and a Cloud API key & secret** — the three
-      steps in [Set up Confluent Cloud](#1-set-up-confluent-cloud) below.
+- [ ] **Confluent Cloud account and a payment method (or promo code)** — the two steps in
+      [Set up Confluent Cloud](#1-set-up-confluent-cloud) below. (`uv run deploy` creates the
+      Cloud API key for you.)
 - [ ] **AWS account with an IAM user** that has a long-lived access key & secret and the
       `bedrock:InvokeModel` permission.
 - [ ] **Claude model access enabled in Amazon Bedrock**, region **`us-east-1`** — enable
@@ -26,6 +34,8 @@ These are **not** part of the timed hour. Complete them before the workshop:
       without it, `AI_RUN_AGENT` fails with AccessDenied and no alerts appear.
 - [ ] **Tools installed:** [Terraform](https://github.com/hashicorp/terraform),
       [Git](https://git-scm.com/), [Python 3.11+](https://www.python.org/downloads/).
+
+</details>
 
 ## 1. Set up Confluent Cloud
 
@@ -42,10 +52,10 @@ These are **not** part of the timed hour. Complete them before the workshop:
 > creates its own environment *and* cluster for you. Click the Confluent logo (top-left) to
 > exit the wizard.
 
-#### Step 2 — Add a payment method (credit card)
+#### Step 2 — Add a payment method (credit card or promo code)
 
-A card is required for Terraform to create a **Standard** cluster. Free credit is used first, so
-you typically won't be charged during the workshop.
+A payment method or promo code is required for Terraform to create a **Standard** cluster. Free
+credit is used first, so you typically won't be charged during the workshop.
 
 > [!TIP]
 > All new sign-ups get **$400 in free credit** to use within the first 30 days — deploying this
@@ -53,43 +63,43 @@ you typically won't be charged during the workshop.
 
 1. Go directly to **[Billing & payment](https://confluent.cloud/settings/billing/payment)**.
 2. Open the **Payment details and contacts** tab.
-3. Click **Add credit card / bank account**.
+3. Choose **one** of the two options:
 
-<img src="images/workshop/0_step2_1.png" alt="Payment details and contacts — Add credit card / bank account" width="500">
+   - **Option A — Credit card:** click **Add credit card / bank account**, enter your **card
+     details**, then **Save**.
 
+     <img src="images/workshop/0_step2_1.png" alt="Payment details and contacts — Add credit card / bank account" width="500">
 
-4. Enter your **card details**, then **Save**.
+   - **Option B — Promo code (provided by the workshop host):** scroll down to **Promos**, click
+     **+ Promo code**, enter the code you were given, then **Apply**. No credit card is needed.
 
-#### Step 3 — Create a Cloud API key & secret
-
-Terraform authenticates with an **org-level "Cloud resource management" API key**. This is what
-you'll paste into `uv run deploy` in the next section.
-
-1. Go directly to **[API keys](https://confluent.cloud/settings/api-keys)** and click **+ Add API key**.
-2. On the **Create API key** form: enter a **Name** (e.g. `Workshop`), select **My account**, and
-   set **Select key scope** to **Cloud resource management**.
-
-<img src="images/workshop/0_step3_1.png" alt="Create API key — My account + Cloud resource management" width="500">
-
-
-> [!NOTE]
-> A service account works too, but then you must grant it the OrganizationAdmin role
-> separately — "My account" already has your permissions.
-
-3. Click **Create API key**, then **copy the Key and Secret** (the secret is shown **only once**,
-   or click **Download**). You'll paste them when `uv run deploy` asks for the
-   **Confluent Cloud API Key** and **Secret**.
+     <img src="images/workshop/0_step2_2.png" alt="Billing and payment — Promos, + Promo code" width="500">
 
 ## 2. Deploy the infrastructure (~10–12 min)
 
-1. Clone the repo:
+1. Open a **Terminal** on your machine — click **Activities** (top-left), then the **Terminal**
+   icon in the dock.
+
+   <img src="images/workshop/2_terminal_1.png" alt="Open Terminal from the dock" width="500">
+
+2. Go to the workshop folder and pull the latest changes:
+
+   ```bash
+   cd workshop/4548/
+   git pull
+   ```
+
+   <details>
+   <summary><strong>Using your own machine?</strong> Clone the repo instead</summary>
 
    ```bash
    git clone https://github.com/confluentinc/demo-confluent-fraud-agent.git
    cd demo-confluent-fraud-agent
    ```
 
-2. Deploy in workshop mode:
+   </details>
+
+3. Deploy in workshop mode:
 
    ```bash
    uv run deploy --workshop
@@ -99,12 +109,14 @@ you'll paste into `uv run deploy` in the next section.
 
    | Prompt | Where to get it |
    |---|---|
-   | Confluent Cloud email / password | Your Confluent Cloud login (press Enter to skip if you use SSO, then run `confluent login --sso`) |
-   | Generate new Confluent Cloud API keys? | Answer `n` and paste the key from the next row |
-   | Confluent Cloud API Key / Secret | The **Key** and **Secret** from [Set up Confluent Cloud → Step 3](#step-3--create-a-cloud-api-key--secret) above |
+   | Confluent Cloud email / password | Your Confluent Cloud login: the **email and password you used to sign up** (press Enter to skip if you use SSO, then run `confluent login --sso`) |
+   | Generate new Confluent Cloud API keys? | Answer `y` — `uv` creates the API key and secret for you |
+   | Confluent Cloud API Key / Secret | Press **Enter** to confirm the key and secret `uv` just created |
    | AWS Access Key / Secret Key | Your AWS IAM user's access key with Bedrock access (or the one your instructor gave you) |
 
    Answer `y` at **Ready to deploy?**.
+
+   <img src="images/workshop/2_deploy_1.png" alt="uv run deploy — Configuration Summary and Ready to deploy? prompt" width="600">
 
 This provisions the environment, Kafka cluster, Schema Registry, Flink compute pool, the
 Bedrock connection, the tools JAR artifact, and the **4 tables** — but **not** the AI
@@ -506,7 +518,7 @@ SELECT * FROM activity_profiles;
 **5. Add another terminal and start the dashboard:**
 
 ```bash
-uv run dashboard   # opens http://localhost:8501
+uv run dashboard
 ```
 
 Give it ~1–2 minutes: as each user's activity burst closes its session window, the agent scores
