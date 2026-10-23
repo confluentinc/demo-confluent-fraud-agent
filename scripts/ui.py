@@ -5,8 +5,10 @@ Provides functions for:
 - Multi-choice selection prompts
 - Text input with default values
 - Consistent user interaction patterns
+- Masking secrets for display
 """
 
+import re
 
 
 def prompt_choice(prompt_text: str, options: list[str]) -> str:
@@ -66,3 +68,31 @@ def prompt_with_default(
         print("This field is required.")
         value = input(f"{prompt_text}: ").strip()
     return value
+
+
+# Names whose values are masked on screen: secrets, plus API key / access key IDs
+# (which the credential summary shows alongside their secrets).
+_SECRET_NAME_RE = re.compile(r"secret|passw(or)?d|token|api_key|access_key", re.IGNORECASE)
+
+
+def is_secret_name(name: str) -> bool:
+    """True if a credential/env var name refers to a value that should be masked."""
+    return bool(_SECRET_NAME_RE.search(name))
+
+
+def mask_secret(value: str, keep: int = 4) -> str:
+    """Mask a secret, keeping the first and last ``keep`` characters.
+
+    Values too short to hide anything behind those edges are fully masked.
+    The mask keeps the original length so the user can tell a paste landed.
+    """
+    if not value:
+        return ""
+    if len(value) < keep * 4:
+        return "*" * len(value)
+    return value[:keep] + "*" * (len(value) - 2 * keep) + value[-keep:]
+
+
+def display_value(name: str, value: str) -> str:
+    """Value as it should appear on screen: masked if ``name`` is a secret."""
+    return mask_secret(value) if is_secret_name(name) else value

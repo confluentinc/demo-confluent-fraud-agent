@@ -32,7 +32,7 @@ from scripts.login_checks import _attempt_login_quiet, ensure_confluent_login
 from scripts.terraform import get_project_root, read_outputs, terraform_dir
 from scripts.terraform_runner import run_terraform
 from scripts.tfvars import is_workshop_mode, write_tfvars_for_deployment
-from scripts.ui import prompt_with_default
+from scripts.ui import display_value, prompt_with_default
 
 DEFAULT_REGION = "us-east-1"  # fixed in terraform/main.tf locals
 DEFAULT_PREFIX = "fraud-agent"  # fixed in terraform/main.tf locals
@@ -147,16 +147,21 @@ def _check_bedrock(creds: dict) -> None:
 
 
 def _print_next_steps(root, workshop: bool) -> None:
+    flink_url = "https://confluent.cloud/go/flink"  # generic fallback when outputs are unreadable
     try:
         outputs = read_outputs(root)
         print(f"\nEnvironment:     {outputs.get('confluent_environment_display_name', '?')}")
         print(f"Flink catalog:   {outputs.get('flink_catalog', '?')}")
         print(f"Flink database:  {outputs.get('flink_database', '?')}")
+        env_id = outputs.get("confluent_environment_id")
+        if env_id:
+            flink_url = f"https://confluent.cloud/environments/{env_id}/flink"
+            print(f"Flink SQL Workspace: {flink_url}")
     except Exception as e:
         print(f"\n⚠ Could not read Terraform outputs: {e}")
     print("\nNext:")
     if workshop:
-        print("  Build the AI pipeline in the Flink workspace — follow WORKSHOP.md")
+        print(f"  Build the AI pipeline in the Flink workspace ({flink_url}) — follow WORKSHOP.md")
     print("  uv run producer     # stream synthetic events")
     print("  uv run dashboard    # live alerts at http://localhost:8501")
     print("  uv run setup-mcp    # let your coding agent run Flink SQL against this deployment")
@@ -323,10 +328,10 @@ def main():
     workshop = is_workshop_mode(final_creds)
 
     print("\n--- Configuration Summary ---")
-    print(f"Region: {DEFAULT_REGION}")
-    print(f"Confluent Cloud API key: {'set' if final_creds.get('TF_VAR_confluent_cloud_api_key') else 'MISSING'}")
-    print(f"Confluent CLI auto-login: {'saved' if final_creds.get('CONFLUENT_EMAIL') else 'not saved'}")
-    print(f"AWS Bedrock key: {'set' if final_creds.get('TF_VAR_aws_bedrock_access_key') else 'MISSING'}")
+    for key, value in sorted(final_creds.items()):
+        if value:
+            print(f"{key}: {display_value(key, value)}")
+    print(f"\nRegion: {DEFAULT_REGION}")
     if workshop:
         print(
             "Mode: WORKSHOP — infra, tables, and functions only; you build the AI pipeline by hand"
