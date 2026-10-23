@@ -28,7 +28,12 @@ import time
 from dotenv import dotenv_values, set_key
 
 from scripts.credentials import generate_confluent_api_keys, load_or_create_credentials_file
-from scripts.login_checks import _attempt_login_quiet, ensure_confluent_login
+from scripts.login_checks import (
+    SSO_NOTE,
+    _attempt_login_quiet,
+    check_confluent_login,
+    ensure_confluent_login,
+)
 from scripts.terraform import get_project_root, read_outputs, terraform_dir
 from scripts.terraform_runner import run_terraform
 from scripts.tfvars import is_workshop_mode, write_tfvars_for_deployment
@@ -239,12 +244,14 @@ def main():
     creds_file, creds = load_or_create_credentials_file(root)
 
     # Confluent Cloud login (saved for auto-login).
-    if not (creds.get("CONFLUENT_EMAIL") and creds.get("CONFLUENT_PASSWORD")):
+    # (A live CLI session, e.g. from SSO, needs no prompt.)
+    if not (creds.get("CONFLUENT_EMAIL") and creds.get("CONFLUENT_PASSWORD")) and not check_confluent_login():
         print("\nConfluent Cloud login (saved to credentials.env for auto-login):")
+        print(f"  {SSO_NOTE}")
         for attempt in range(3):
-            email = input("  Email (Enter to skip): ").strip()
+            email = input("  Email (Enter if you use SSO or want to skip): ").strip()
             if not email:
-                print("  Skipped. Run `confluent login` manually if your session expires.")
+                print("  Skipped. SSO users will be offered a single sign-on login next.")
                 break
             password = getpass.getpass("  Password: ")
             if _attempt_login_quiet(email, password):
@@ -258,9 +265,9 @@ def main():
             print(
                 f"  Login failed. {remaining} attempt(s) left."
                 if remaining
-                else "  Login failed. Skipping (use `confluent login --sso` if you use SSO)."
+                else "  Login failed. Skipping (use `confluent login --no-browser` if you use SSO)."
             )
-    ensure_confluent_login(creds)
+    ensure_confluent_login(creds, interactive=True)
     print("✓ Confluent CLI logged in")
     print(f"\nRegion: {DEFAULT_REGION} (fixed)")
 

@@ -109,7 +109,7 @@ credit is used first, so you typically won't be charged during the workshop.
 
    | Prompt | Where to get it |
    |---|---|
-   | Confluent Cloud email / password | Your Confluent Cloud login: the **email and password you used to sign up** (press Enter to skip if you use SSO, then run `confluent login --sso`) |
+   | Confluent Cloud email / password | Your Confluent Cloud login: the **email and password you used to sign up** (**single sign-on?** Log into the Confluent CLI first with `confluent login --no-browser`, then press Enter at this prompt. If you skip that, `deploy` offers to run the SSO login for you) |
    | Generate new Confluent Cloud API keys? | Answer `y` — `uv` creates the API key and secret for you |
    | Confluent Cloud API Key / Secret | Press **Enter** to confirm the key and secret `uv` just created |
    | AWS Access Key / Secret Key | Your AWS IAM user's access key with Bedrock access (or the one your instructor gave you) |
