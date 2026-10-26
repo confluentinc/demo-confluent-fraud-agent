@@ -95,7 +95,7 @@ credit is used first, so you typically won't be charged during the workshop.
 
    </details>
 
-3. **Only if you signed up to Confluent Cloud with SSO:** sign in to the Confluent CLI first.
+3. **Only if you signed up to Confluent Cloud with SSO:** sign in to the Confluent CLI first. Skip this if you signed up with email and password.
 
    ```bash
    confluent login
