@@ -37,7 +37,7 @@ These are **not** part of the timed hour. Complete them before the workshop:
 
 #### Step 1 — Create your Confluent Cloud account
 
-1. Go to **[confluent.cloud/signup](https://confluent.cloud/signup)**.
+1. Go to the **[Confluent Cloud sign-up page](https://cnfl.io/learnwithcflt)**.
 2. Enter your **name**, **work email**, **company**, and a **password**, then accept the terms
    and click **Start Free**.
 3. On first sign-in, an **onboarding wizard** asks a few questions, then offers to create your
@@ -95,11 +95,10 @@ credit is used first, so you typically won't be charged during the workshop.
 
    </details>
 
-3. **Signed up to Confluent Cloud with SSO?** Sign in to the Confluent CLI first (skip this if you
-   signed up with an email and password):
+3. **Only if you signed up to Confluent Cloud with SSO:** sign in to the Confluent CLI first.
 
    ```bash
-   confluent login --no-browser
+   confluent login
    ```
 
 4. Deploy in workshop mode:
@@ -126,12 +125,6 @@ pipeline. It also writes a ready-to-use `.env` for the producer and dashboard.
 
 > [!NOTE]
 > Grab a coffee ☕ — it takes **5–7 minutes** to deploy.
-
-> [!WARNING]
-> Ran `uv run deploy` without `--workshop` first? That builds the whole AI pipeline for you, and
-> its activity profiles, model, tools, and agent stay in your Flink catalog, so your `CREATE` statements below would
-> fail with "already exists". `uv run deploy --workshop` catches this and offers to destroy the
-> deployment and redeploy in workshop mode for you — answer `y`.
 
 ## 3. Start the event stream — generate live activity
 
@@ -197,9 +190,9 @@ goes quiet, so a fraud burst is never split in two. This statement runs **contin
 stays **RUNNING**).
 
 This unions the three input streams and collects each user's activity into a 3-second
-event-time SESSION window — one profile per activity burst. It is materialized as its own
-`activity_profiles` table so you can query it and see it in Stream Lineage. In the Flink
-workspace, add a **new cell**, paste the whole block below, and run it:
+event-time SESSION window — one profile per activity burst.
+
+In the Flink workspace, add a **new cell**, paste the whole block below, and run it:
 
 ```sql
 SET 'client.statement-name' = 'create-activity-profiles';
