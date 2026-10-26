@@ -130,12 +130,9 @@ pipeline. It also writes a ready-to-use `.env` for the producer and dashboard.
 ## 3. Start the event stream — generate live activity
 
 Before building the pipeline, get data flowing so you can watch each stage light up as you
-create it. Two local apps do the work, both reading the `.env` Terraform already wrote (no
-config needed):
-
-- the **producer** — stands in for your customers, streaming synthetic transactions, logins,
-  and account changes into your topics;
-- the **dashboard** — the fraud analyst's screen (you'll start it at the end).
+create it. The **producer** stands in for your customers, streaming synthetic transactions,
+logins, and account changes into your topics. It reads the `.env` Terraform already wrote (no
+config needed).
 
 **1. Start the producer.** Open a new terminal, `cd` into the repo root directory, and run
 (`uv` installs the Python dependencies on first run):
