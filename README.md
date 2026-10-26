@@ -128,9 +128,10 @@ SELECT * FROM activity_profiles;            -- should fill (windowing works)
 SELECT * FROM fraud_alerts WHERE risk_score >= 70;   -- the high-risk verdicts
 ```
 
-**`CREATE MODEL` (or a tool/agent) fails with "already exists" in the workshop?** You deployed in
-demo mode first: that created the pipeline objects, and they stay in the Flink catalog after the
-statements are removed. Run `uv run destroy`, then `uv run deploy --workshop`.
+**A workshop `CREATE` (`activity_profiles`, the model, a tool, or the agent) fails with "already exists"?**
+You deployed in demo mode first: that created the pipeline objects, and they stay in the Flink
+catalog after the statements are removed. Re-run `uv run deploy --workshop` and answer `y` when it
+offers to destroy and redeploy (or run `uv run destroy`, then `uv run deploy --workshop`).
 
 ## Utility commands
 

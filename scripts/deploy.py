@@ -124,17 +124,36 @@ def _flush_pending_writes(creds_file) -> None:
         sys.exit(1)
 
 
-def _deploy(root, creds: dict) -> None:
-    if is_workshop_mode(creds) and deployed_demo_pipeline(root):
-        print(
-            "\n✗ This deployment already runs the demo AI pipeline (fraud_model, tools, agent)."
-            "\n  Workshop mode would leave those in the Flink catalog, so your own CREATE MODEL"
-            "\n  in WORKSHOP.md would fail with \"already exists\". Start clean instead:"
-            "\n    uv run destroy"
-            "\n    uv run deploy --workshop"
-            "\n  (To keep the demo, set TF_VAR_deploy_flink_pipeline=true in credentials.env.)"
-        )
+def _start_clean_for_workshop(root, interactive: bool) -> None:
+    """Workshop mode over a live demo pipeline: offer to destroy first, else exit.
+
+    Removing the demo statements leaves fraud_model, the tools, the agent, and
+    activity_profiles in the Flink catalog, so WORKSHOP.md's CREATE statements
+    would fail with "already exists".
+    """
+    print(
+        "\n⚠ This deployment already runs the demo AI pipeline (activity_profiles, fraud_model,"
+        "\n  tools, agent). Workshop mode would leave those in the Flink catalog, so your own"
+        '\n  CREATE statements in WORKSHOP.md would fail with "already exists". Starting clean fixes it.'
+    )
+    if interactive and input("\nDestroy this deployment and redeploy in workshop mode? (y/n): ").strip().lower() == "y":
+        # destroy --testing skips its own confirmation: the answer above is it.
+        if subprocess.run(["uv", "run", "destroy", "--testing"], cwd=root).returncode == 0:
+            return
+        print("\n✗ Destroy failed. Fix the error above, then rerun `uv run deploy --workshop`.")
         sys.exit(1)
+    print(
+        "\n  Start clean yourself:"
+        "\n    uv run destroy"
+        "\n    uv run deploy --workshop"
+        "\n  (To keep the demo, set TF_VAR_deploy_flink_pipeline=true in credentials.env.)"
+    )
+    sys.exit(1)
+
+
+def _deploy(root, creds: dict, interactive: bool = False) -> None:
+    if is_workshop_mode(creds) and deployed_demo_pipeline(root):
+        _start_clean_for_workshop(root, interactive)
     print("\n=== Starting Deployment ===")
     if not write_tfvars_for_deployment(root, creds):
         print("Error: could not write terraform/terraform.tfvars (missing credentials?).")
@@ -409,7 +428,7 @@ def main():
         print("Deployment cancelled.")
         sys.exit(0)
 
-    _deploy(root, final_creds)
+    _deploy(root, final_creds, interactive=True)
     _print_next_steps(root, workshop)
     if workshop:
         return

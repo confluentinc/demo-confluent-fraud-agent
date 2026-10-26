@@ -143,3 +143,28 @@ def test_mcp_env_strips_bootstrap_scheme():
 def test_terraform_exposes_every_output_setup_rtce_reads():
     names = {getattr(setup_rtce, n) for n in dir(setup_rtce) if n.startswith("_TF_")}
     assert names | {"source_topics", "served_topics"} <= _declared("output", "outputs.tf")
+
+
+@pytest.mark.parametrize(
+    ("interactive", "answer", "destroy_rc", "exits", "destroyed"),
+    [
+        (True, "y", 0, False, True),  # destroyed, deploy continues
+        (True, "y", 1, True, True),  # destroy failed
+        (True, "n", 0, True, False),  # declined
+        (False, "y", 0, True, False),  # bots never destroy
+    ],
+)
+def test_start_clean_for_workshop(monkeypatch, tmp_path, interactive, answer, destroy_rc, exits, destroyed):
+    from scripts import deploy
+
+    calls = []
+    monkeypatch.setattr("builtins.input", lambda _prompt: answer)
+    monkeypatch.setattr(
+        deploy.subprocess, "run", lambda cmd, cwd: calls.append(cmd) or type("R", (), {"returncode": destroy_rc})()
+    )
+    if exits:
+        with pytest.raises(SystemExit):
+            deploy._start_clean_for_workshop(tmp_path, interactive)
+    else:
+        deploy._start_clean_for_workshop(tmp_path, interactive)
+    assert calls == ([["uv", "run", "destroy", "--testing"]] if destroyed else [])

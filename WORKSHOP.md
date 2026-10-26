@@ -129,9 +129,9 @@ pipeline. It also writes a ready-to-use `.env` for the producer and dashboard.
 
 > [!WARNING]
 > Ran `uv run deploy` without `--workshop` first? That builds the whole AI pipeline for you, and
-> its model, tools, and agent stay in your Flink catalog, so your `CREATE` statements below would
-> fail with "already exists". `uv run deploy --workshop` stops and tells you to start clean:
-> run `uv run destroy`, then `uv run deploy --workshop`.
+> its activity profiles, model, tools, and agent stay in your Flink catalog, so your `CREATE` statements below would
+> fail with "already exists". `uv run deploy --workshop` catches this and offers to destroy the
+> deployment and redeploy in workshop mode for you — answer `y`.
 
 ## 3. Start the event stream — generate live activity
 
