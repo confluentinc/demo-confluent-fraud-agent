@@ -4,8 +4,8 @@ In this workshop you deploy the Confluent Cloud infrastructure with Terraform, t
 **real-time fraud detection AI pipeline yourself**.
 
 The pipeline watches three live streams — **transactions**, **logins**, and **account changes** —
-and stitches each user's recent activity into a per-user profile. A **Streaming Agent** (Claude
-on AWS Bedrock) then scores every profile for fraud, calls tools to act, and writes the verdicts
+and stitches each user's recent activity into a per-user profile. A **Streaming Agent** (Claude,
+via Confluent's CSP Hosted model inference) then scores every profile for fraud, calls tools to act, and writes the verdicts
 to a `fraud_alerts` stream.
 
 ![Architecture — end-to-end pipeline](images/Architecture.png)
@@ -27,11 +27,7 @@ These are **not** part of the timed hour. Complete them before the workshop:
 - [ ] **Confluent Cloud account and a payment method (or promo code)** — the two steps in
       [Set up Confluent Cloud](#1-set-up-confluent-cloud) below. (`uv run deploy` creates the
       Cloud API key for you.)
-- [ ] **AWS account with an IAM user** that has a long-lived access key & secret and the
-      `bedrock:InvokeModel` permission.
-- [ ] **Claude model access enabled in Amazon Bedrock**, region **`us-east-1`** — enable
-      Anthropic Claude on the **Model access** page. Approval can lag, so do this early;
-      without it, `AI_RUN_AGENT` fails with AccessDenied and no alerts appear.
+- [ ] **No AWS account needed** — the agent's Claude model is CSP Hosted by Confluent.
 - [ ] **Tools installed:** [Terraform](https://github.com/hashicorp/terraform),
       [Git](https://git-scm.com/), [Python 3.11+](https://www.python.org/downloads/).
 
@@ -41,7 +37,7 @@ These are **not** part of the timed hour. Complete them before the workshop:
 
 #### Step 1 — Create your Confluent Cloud account
 
-1. Go to **[confluent.cloud/signup](https://confluent.cloud/signup)**.
+1. Go to the **[Confluent Cloud sign-up page](https://cnfl.io/learnwithcflt)**.
 2. Enter your **name**, **work email**, **company**, and a **password**, then accept the terms
    and click **Start Free**.
 3. On first sign-in, an **onboarding wizard** asks a few questions, then offers to create your
@@ -99,7 +95,13 @@ credit is used first, so you typically won't be charged during the workshop.
 
    </details>
 
-3. Deploy in workshop mode:
+3. **Only if you signed up to Confluent Cloud with SSO:** sign in to the Confluent CLI first. Skip this if you signed up with email and password.
+
+   ```bash
+   confluent login
+   ```
+
+4. Deploy in workshop mode:
 
    ```bash
    uv run deploy --workshop
@@ -109,61 +111,169 @@ credit is used first, so you typically won't be charged during the workshop.
 
    | Prompt | Where to get it |
    |---|---|
-   | Confluent Cloud email / password | Your Confluent Cloud login: the **email and password you used to sign up** (press Enter to skip if you use SSO, then run `confluent login --sso`) |
+   | Confluent Cloud email / password | Your Confluent Cloud login: the **email and password you used to sign up** (**single sign-on?** Press Enter at this prompt after the CLI login in step 3. If you skipped it, `deploy` offers to run the SSO login for you) |
    | Generate new Confluent Cloud API keys? | Answer `y` — `uv` creates the API key and secret for you |
    | Confluent Cloud API Key / Secret | Press **Enter** to confirm the key and secret `uv` just created |
-   | AWS Access Key / Secret Key | Your AWS IAM user's access key with Bedrock access (or the one your instructor gave you) |
 
    Answer `y` at **Ready to deploy?**.
 
    <img src="images/workshop/2_deploy_1.png" alt="uv run deploy — Configuration Summary and Ready to deploy? prompt" width="600">
 
 This provisions the environment, Kafka cluster, Schema Registry, Flink compute pool, the
-Bedrock connection, the tools JAR artifact, and the **4 tables** — but **not** the AI
+tools JAR artifact, and the **4 tables** — but **not** the AI
 pipeline. It also writes a ready-to-use `.env` for the producer and dashboard.
 
 > [!NOTE]
 > Grab a coffee ☕ — it takes **5–7 minutes** to deploy.
 
-## 3. Connect the model — give the agent a brain
+## 3. Start the event stream — generate live activity
 
-Now we build the fraud-detection pipeline.
+Before building the pipeline, get data flowing so you can watch each stage light up as you
+create it. The **producer** stands in for your customers, streaming synthetic transactions,
+logins, and account changes into your topics.
 
-Fraud rarely fits fixed if/else rules — catching it takes judgment. So the first thing you do
+**1. Start the producer.** Open a new terminal, `cd` into the repo root directory, and run
+(`uv` installs the Python dependencies on first run):
+
+```bash
+uv run producer
+```
+
+> [!NOTE]
+> Leave this running for the whole workshop and open a new terminal tab for anything else.
+
+**2. Open the Flink workspace in Confluent Cloud.**
+
+Navigate to the [Flink UI](https://confluent.cloud/go/flink) and select the **environment**
+Terraform created (`fraud-agent-env-…`).
+
+<img src="images/workshop/3_step3_1.png" alt="Select the fraud-agent environment" width="600">
+
+Open a **SQL workspace**.
+
+<img src="images/workshop/3_step3_2.png" alt="Compute pool — open SQL Workspace" width="600">
+
+**3. Set the Catalog and Database.** Set the **Catalog** to your `flink_catalog` output and the
+**Database** to your `flink_database` output.
+
+<img src="images/workshop/3_step3_3.png" alt="Set the workspace catalog and database" width="700">
+
+**4. Confirm events are flowing** — query the three input topics:
+
+```sql
+SELECT * FROM transactions LIMIT 5;
+```
+
+<img src="images/workshop/3_step3_4.png" alt="transactions query results" width="700">
+
+```sql
+SELECT * FROM user_logins LIMIT 5;
+```
+
+<img src="images/workshop/3_step3_5.png" alt="user_logins query results" width="700">
+
+```sql
+SELECT * FROM account_changes LIMIT 5;
+```
+
+<img src="images/workshop/3_step3_6.png" alt="account_changes query results" width="700">
+
+## 4. Build each user's activity profile — turn events into a story
+
+<img src="images/workshop/4_step4_arch.png" alt="Pipeline — session-window aggregation into activity_profiles" width="800">
+
+A fraud analyst needs one user's recent behavior in a single view, but events arrive as three
+separate raw streams (transactions, logins, account changes). This statement stitches them
+together: for each user it gathers a short burst of activity into a single, human-readable
+profile. A **session window** groups events that happen close together and closes when the user
+goes quiet, so a fraud burst is never split in two. This statement runs **continuously** (it
+stays **RUNNING**).
+
+This unions the three input streams and collects each user's activity into a 3-second
+event-time SESSION window — one profile per activity burst.
+
+In the Flink workspace, add a **new cell**, paste the whole block below, and run it:
+
+```sql
+SET 'client.statement-name' = 'create-activity-profiles';
+SET 'sql.tables.scan.idle-timeout' = '5 s';
+SET 'sql.tables.scan.startup.mode' = 'latest-offset';
+
+CREATE TABLE `activity_profiles` AS
+WITH `unified` AS (
+  SELECT `user_id`, 'transaction' AS `event_type`, `event_time`,
+         CONCAT('- txn ', `transaction_id`, ': $', CAST(`amount` AS STRING),
+                ' at ', `merchant`, ' (', `merchant_category`, ') in ', `location`) AS `line`
+  FROM `transactions`
+  UNION ALL
+  SELECT `user_id`, 'login' AS `event_type`, `event_time`,
+         CONCAT('- login from ', `location`, ' via ', `device_id`, ' (ip ', `ip_address`, ')') AS `line`
+  FROM `user_logins`
+  UNION ALL
+  SELECT `user_id`, 'account_change' AS `event_type`, `event_time`,
+         CONCAT('- ', `field_changed`, ' changed from "', `old_value`, '" to "', `new_value`, '"') AS `line`
+  FROM `account_changes`
+)
+SELECT
+  `user_id`,
+  `window_start`,
+  `window_end`,
+  CONCAT(
+    'User: ', `user_id`, '\n\n',
+    'Transactions:\n', COALESCE(LISTAGG(CASE WHEN `event_type` = 'transaction' THEN `line` END, '\n'), '  (none)'), '\n\n',
+    'Logins:\n', COALESCE(LISTAGG(CASE WHEN `event_type` = 'login' THEN `line` END, '\n'), '  (none)'), '\n\n',
+    'Account changes:\n', COALESCE(LISTAGG(CASE WHEN `event_type` = 'account_change' THEN `line` END, '\n'), '  (none)')
+  ) AS `profile_text`
+FROM TABLE(
+  SESSION(TABLE `unified` PARTITION BY `user_id`, DESCRIPTOR(`event_time`), INTERVAL '3' SECONDS)
+)
+GROUP BY `user_id`, `window_start`, `window_end`;
+```
+
+> [!IMPORTANT]
+> The two `SET`s in the block above matter:
+> - **`idle-timeout = '5 s'`** keeps the session-window watermark advancing — without it alerts start, then dry up.
+> - **`startup.mode = 'latest-offset'`** reads only new events. Every row is a paid model call, so replaying topic history would multiply cost and load.
+
+> [!NOTE]
+> This is a continuous statement — keep this cell **RUNNING** for the whole workshop.
+
+
+**Confirm the activity profiles are being built** — each row is one user's session-window
+profile, the exact text the agent will score:
+
+```sql
+SELECT * FROM activity_profiles;
+```
+
+<img src="images/workshop/4_step4_1.png" alt="activity_profiles query results" width="700">
+
+## 5. Connect the model — give the agent a brain
+
+Fraud rarely fits fixed if/else rules — catching it takes judgment. So the next thing you do
 is give the pipeline access to a large language model. This statement registers that model as
 `fraud_model` so Flink SQL can call it like any other function.
 
-1. Navigate to the [Flink UI](https://confluent.cloud/go/flink) and select the **environment**
-   Terraform created (`fraud-agent-env-…`).
-
-   <img src="images/workshop/3_step3_1.png" alt="Select the fraud-agent environment" width="600">
-
-2. Open a **SQL workspace**.
-
-   <img src="images/workshop/3_step3_2.png" alt="Compute pool — open SQL Workspace" width="600">
-
-3. Set the **Catalog** to your `flink_catalog` output and the **Database** to your
-   `flink_database` output.
-
-   <img src="images/workshop/3_step3_3.png" alt="Set the workspace catalog and database" width="700">
-
-4. Run the statement below to create the model in your Flink catalog.
+Run the statement below to create the model in your Flink catalog. `'provider' = 'confluent'`
+is CSP Hosted model inference: Confluent invokes Claude for you, so there's no connection or
+API key to manage.
 
 ```sql
 CREATE MODEL `fraud_model`
 INPUT (`prompt` STRING)
 OUTPUT (`response` STRING)
 WITH (
-  'provider' = 'bedrock',
+  'provider' = 'confluent',
   'task' = 'text_generation',
-  'bedrock.connection' = 'bedrock-fraud-connection',
-  'bedrock.params.max_tokens' = '8192'
+  'confluent.model' = 'anthropic.claude-sonnet-4-6',
+  'confluent.params.max_tokens' = '8192'
 );
 ```
 
 On its own the model just "thinks" — you'll give it actions and a job in the next sections.
 
-## 4. Define the actions — give the agent hands
+
+## 6. Define the actions — give the agent hands
 
 A fraud analyst that can only *think* isn't useful; it has to *act* — flag a suspicious
 transaction, freeze a compromised account, or warn the customer. That takes two layers: a
@@ -218,69 +328,10 @@ SHOW USER FUNCTIONS;
 ```
 </details>
 
-## 5. Build each user's activity profile — turn events into a story
 
-<img src="images/workshop/5_step5_arch.png" alt="Pipeline — session-window aggregation into activity_profiles" width="800">
+## 7. Assemble the fraud analyst — create the agent
 
-A fraud analyst needs one user's recent behavior in a single view, but events arrive as three
-separate raw streams (transactions, logins, account changes). This statement stitches them
-together: for each user it gathers a short burst of activity into a single, human-readable
-profile. A **session window** groups events that happen close together and closes when the user
-goes quiet, so a fraud burst is never split in two. This statement runs **continuously** (it
-stays **RUNNING**).
-
-This unions the three input streams and collects each user's activity into a 3-second
-event-time SESSION window — one profile per activity burst. It is materialized as its own
-`activity_profiles` table so you can query it and see it in Stream Lineage. Run the whole block
-below together:
-
-```sql
-SET 'client.statement-name' = 'create-activity-profiles';
-SET 'sql.tables.scan.idle-timeout' = '5 s';
-SET 'sql.tables.scan.startup.mode' = 'latest-offset';
-
-CREATE TABLE `activity_profiles` AS
-WITH `unified` AS (
-  SELECT `user_id`, 'transaction' AS `event_type`, `event_time`,
-         CONCAT('- txn ', `transaction_id`, ': $', CAST(`amount` AS STRING),
-                ' at ', `merchant`, ' (', `merchant_category`, ') in ', `location`) AS `line`
-  FROM `transactions`
-  UNION ALL
-  SELECT `user_id`, 'login' AS `event_type`, `event_time`,
-         CONCAT('- login from ', `location`, ' via ', `device_id`, ' (ip ', `ip_address`, ')') AS `line`
-  FROM `user_logins`
-  UNION ALL
-  SELECT `user_id`, 'account_change' AS `event_type`, `event_time`,
-         CONCAT('- ', `field_changed`, ' changed from "', `old_value`, '" to "', `new_value`, '"') AS `line`
-  FROM `account_changes`
-)
-SELECT
-  `user_id`,
-  `window_start`,
-  `window_end`,
-  CONCAT(
-    'User: ', `user_id`, '\n\n',
-    'Transactions:\n', COALESCE(LISTAGG(CASE WHEN `event_type` = 'transaction' THEN `line` END, '\n'), '  (none)'), '\n\n',
-    'Logins:\n', COALESCE(LISTAGG(CASE WHEN `event_type` = 'login' THEN `line` END, '\n'), '  (none)'), '\n\n',
-    'Account changes:\n', COALESCE(LISTAGG(CASE WHEN `event_type` = 'account_change' THEN `line` END, '\n'), '  (none)')
-  ) AS `profile_text`
-FROM TABLE(
-  SESSION(TABLE `unified` PARTITION BY `user_id`, DESCRIPTOR(`event_time`), INTERVAL '3' SECONDS)
-)
-GROUP BY `user_id`, `window_start`, `window_end`;
-```
-
-> [!IMPORTANT]
-> The two `SET`s in the block above matter:
-> - **`idle-timeout = '5 s'`** keeps the session-window watermark advancing — without it alerts start, then dry up.
-> - **`startup.mode = 'latest-offset'`** reads only new events. Everyone shares one Bedrock account, so replaying topic history would spike the shared quota.
-
-> [!NOTE]
-> This is a continuous statement — keep this cell **RUNNING** for the whole workshop.
-
-## 6. Assemble the fraud analyst — create the agent
-
-<img src="images/workshop/6_step6_arch.png" alt="Pipeline — Fraud Streaming Agent producing fraud_alerts" width="800">
+<img src="images/workshop/7_step7_arch.png" alt="Pipeline — Fraud Streaming Agent producing fraud_alerts" width="800">
 
 Now combine the brain, the hands, and a **job description**. The prompt is where the use-case
 logic lives: it tells the agent how to score risk from 0–100, which tools to call at each score
@@ -290,14 +341,14 @@ single strict-JSON verdict you can store — it *is* the fraud policy.
 ### 🎯 Challenge: Give the agent its model
 
 Build the agent **either** way below — the result is the same. Your challenge in both: point it
-at the model you created in section 3 (need the name? run `SHOW MODELS;`).
+at the model you created in section 5 (need the name? run `SHOW MODELS;`).
 
 **Option A — Streaming Agents UI**
 
 1. In the Flink Workspace left panel, expand your cluster, find **Agents**, and click the **+**.
    (Or from your environment page, open **Streaming agents → Create streaming agent**.)
 
-   <img src="images/workshop/6_step6_1.png" alt="Left panel — Agents → Create an agent" width="450">
+   <img src="images/workshop/7_step7_1.png" alt="Left panel — Agents → Create an agent" width="450">
 
 2. **Agent name** — `fraud_detection_agent`.
 3. 🎯 **Model** — pick the model you created from the dropdown.
@@ -342,13 +393,13 @@ at the model you created in section 3 (need the name? run `SHOW MODELS;`).
   {"user_id": "<copy from input>", "risk_score": <0-100 integer>, "reasoning": "<one or two sentences>", "actions_taken": ["freeze_account"|"flag_transaction"|"notify_user"], "flagged_transaction_ids": ["<copied transaction ids>"]}
   ```
 
-   <img src="images/workshop/6_step6_2.png" alt="Create Streaming Agent — name, instructions, model" width="500">
+   <img src="images/workshop/7_step7_2.png" alt="Create Streaming Agent — name, instructions, model" width="500">
 
 5. Click on **Advanced Configurations**.
 6. Click on **Add new Tool**, add all three — `flag_transaction_tool`, `freeze_account_tool`,
    `notify_user_tool` — then click **Add**.
 
-   <img src="images/workshop/6_step6_3.png" alt="Add agent tools — select the three tools and click Add" width="500">
+   <img src="images/workshop/7_step7_3.png" alt="Add agent tools — select the three tools and click Add" width="500">
 
 > [!WARNING]
 > Don't forget to click **Add** — otherwise the tools won't be attached to the agent.
@@ -358,7 +409,7 @@ at the model you created in section 3 (need the name? run `SHOW MODELS;`).
    - `handle_exception` = `continue`
    - `max_consecutive_failures` = `5`
 
-   <img src="images/workshop/6_step6_4.png" alt="Advanced configurations — tools table and settings" width="500">
+   <img src="images/workshop/7_step7_4.png" alt="Advanced configurations — tools table and settings" width="500">
 
 8. Click on **Create agent** to create the agent.
 
@@ -418,13 +469,14 @@ WITH (
 The agent is now **created but not running** — nothing calls it yet. In the next step we put it
 to work.
 
-## 7. Detect fraud in real time — put the analyst to work
+
+## 8. Detect fraud in real time — put the analyst to work
 
 This is the payoff. For **every** activity profile that appears, this statement calls the agent,
 lets it score and act, and writes the verdict — risk score, reasoning, actions taken, and
 flagged transaction ids — into the `fraud_alerts` table. It runs **continuously**: each new
 burst of user activity is analyzed within seconds. This is also the statement that actually
-calls Bedrock, so leave it **RUNNING**.
+calls the model, so leave it **RUNNING**.
 
 ### 🚀 Challenge: Unleash the agent
 
@@ -455,7 +507,7 @@ FROM `scored`;
 <details>
 <summary>Hint — how do I find the agent name?</summary>
 
-You created the agent in section 6. List your agents with:
+You created the agent in section 7. List your agents with:
 
 ```sql
 SHOW AGENTS;
@@ -465,57 +517,19 @@ SHOW AGENTS;
 > [!NOTE]
 > This is a continuous statement — keep this cell **RUNNING** for the whole workshop.
 
-## 8. Generate activity and watch alerts (~8–12 min)
 
-Your pipeline is live but idle — no events are flowing yet. Now you'll simulate customer
-activity and watch the agent score it in real time. Two local apps do this, both reading the
-`.env` Terraform already wrote (no config needed):
-
-- the **producer** — stands in for your customers, streaming synthetic transactions, logins,
-  and account changes into your topics;
-- the **dashboard** — the fraud analyst's screen, showing the agent's alerts as they land.
-
-**1. Open a new terminal and `cd` into the repo root directory.**
-
-**2. Start the producer** (`uv` installs the Python dependencies on first run):
-
-```bash
-uv run producer
-```
-
-> [!NOTE]
-> Leave this running and open a new terminal tab for the next steps.
-
-**3. Confirm events are flowing** — back in the Flink Workspace, query the input topics:
+You can watch the high-risk verdicts directly in the workspace:
 
 ```sql
-SELECT * FROM transactions LIMIT 5;
+SELECT * FROM fraud_alerts WHERE risk_score >= 70;
 ```
 
-<img src="images/workshop/8_step8_1.png" alt="transactions query results" width="700">
+<img src="images/workshop/8_step8_1.png" alt="fraud_alerts high-risk query results" width="700">
 
-```sql
-SELECT * FROM user_logins LIMIT 5;
-```
+## 9. Watch the alerts — start the dashboard
 
-<img src="images/workshop/8_step8_2.png" alt="user_logins query results" width="700">
-
-```sql
-SELECT * FROM account_changes LIMIT 5;
-```
-
-<img src="images/workshop/8_step8_3.png" alt="account_changes query results" width="700">
-
-**4. Confirm the activity profiles are being built** — each row is one user's session-window
-profile, the exact text the agent scores:
-
-```sql
-SELECT * FROM activity_profiles;
-```
-
-<img src="images/workshop/8_step8_4.png" alt="activity_profiles query results" width="700">
-
-**5. Add another terminal and start the dashboard:**
+With the producer still running, open a new terminal tab in the repo root and start the
+dashboard:
 
 ```bash
 uv run dashboard
@@ -525,16 +539,7 @@ Give it ~1–2 minutes: as each user's activity burst closes its session window,
 it and high-risk cases surface as alerts. Keep the producer running — the dashboard shows alerts
 generated from here on.
 
-<img src="images/workshop/8_step8_5.png" alt="Fraud Detection Dashboard" width="800">
-
-
-You can also watch the high-risk verdicts directly in the workspace:
-
-```sql
-SELECT * FROM fraud_alerts WHERE risk_score >= 70;
-```
-
-<img src="images/workshop/8_step8_6.png" alt="fraud_alerts high-risk query results" width="700">
+<img src="images/workshop/9_step9_1.png" alt="Fraud Detection Dashboard" width="800">
 
 ## 🎉 That's a wrap
 
@@ -542,7 +547,7 @@ You just built a real-time, AI-powered fraud detection pipeline — no batch job
 rules engine. Raw events stream in, Flink windows them per user, and a Claude-powered Streaming
 Agent scores every burst and acts in seconds. Not bad for an hour's work.
 
-## 9. Cleanup
+## 10. Cleanup
 
 Stop the producer by running **Ctrl+C** in its terminal. Then tear it all down (so the credits
 last):
@@ -550,3 +555,4 @@ last):
 ```bash
 uv run destroy
 ```
+

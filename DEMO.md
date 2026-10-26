@@ -4,8 +4,8 @@ The fastest way to see the system: Terraform provisions **everything** — infra
 *and* the full Flink AI pipeline — and you just run the producer and dashboard. For the
 hands-on version where you build the AI pipeline yourself, see [`WORKSHOP.md`](WORKSHOP.md).
 
-> Complete the shared [Prerequisites](README.md#prerequisites) first (Confluent Cloud +
-> AWS Bedrock credentials, Claude model access in `us-east-1`, and the required tools).
+> Complete the shared [Prerequisites](README.md#prerequisites) first (Confluent Cloud and the
+> required tools — AWS Bedrock credentials only if you deploy with `--bedrock`).
 
 ## 1. Clone the repository
 
@@ -15,19 +15,29 @@ git clone https://github.com/confluentinc/demo-confluent-fraud-agent.git && cd d
 
 ## 2. Deploy everything
 
+**Signed up to Confluent Cloud with SSO?** Sign in to the Confluent CLI first (skip this if you
+signed up with an email and password):
+
+```bash
+confluent login --no-browser
+```
+
+Then deploy:
+
 ```bash
 uv run deploy
 ```
 
-The first run asks for your Confluent Cloud login, a Cloud API key (it can generate one for
-you), and the AWS key that can invoke Bedrock (it detects credentials already in your shell).
-It saves them to `credentials.env` (gitignored), so later runs only ask you to confirm.
+The first run asks for your Confluent Cloud login (**SSO?** press Enter at that prompt after the CLI login above) and a Cloud API key (it can generate one for
+you). The agent's Claude model is CSP Hosted by Confluent, so no AWS key is needed; run
+`uv run deploy --bedrock` instead to use your own AWS Bedrock key (it detects credentials
+already in your shell). It saves them to `credentials.env` (gitignored), so later runs only ask you to confirm.
 
 These are the **only** inputs. Region (`us-east-1`), the Claude model, resource names, and
 sizing are all preset.
 
 Deploy provisions the environment, Kafka cluster, Schema Registry, Flink compute pool, the
-Bedrock connection, the model, the UDF tools (JAR upload + functions + tools), the agent,
+model (plus a Bedrock connection with `--bedrock`), the UDF tools (JAR upload + functions + tools), the agent,
 and the detection query — and writes a ready-to-use `.env` for the local apps. It takes about
 10 minutes.
 

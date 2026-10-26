@@ -1,8 +1,32 @@
 # ---------------------------------------------------------------------------
+# LLM backing fraud_model. llm_provider = "confluent" (the default) is CSP
+# Hosted Flink Model Inference: Confluent invokes the model in its own cloud
+# account, so there is no connection and no AWS key. "bedrock" creates the
+# Bedrock connection below from the user's IAM key. Same model name either way,
+# so the agent SQL doesn't change. Switching provider on an applied deployment
+# re-runs CREATE MODEL against an existing name — `uv run destroy` first.
+# ---------------------------------------------------------------------------
+locals {
+  use_bedrock = var.llm_provider == "bedrock"
+
+  fraud_model_with = local.use_bedrock ? join(",\n  ", [
+    "'provider' = 'bedrock'",
+    "'task' = 'text_generation'",
+    "'bedrock.connection' = '${one(confluent_flink_connection.bedrock[*].display_name)}'",
+    "'bedrock.params.max_tokens' = '8192'",
+    ]) : join(",\n  ", [
+    "'provider' = 'confluent'",
+    "'task' = 'text_generation'",
+    "'confluent.model' = '${var.csp_hosted_model}'",
+    "'confluent.params.max_tokens' = '8192'",
+  ])
+}
+
 # Bedrock connection (IAM user creds, fixed region). The Claude model id is
 # encoded in the endpoint URL (see locals in main.tf).
-# ---------------------------------------------------------------------------
 resource "confluent_flink_connection" "bedrock" {
+  count = local.use_bedrock ? 1 : 0
+
   organization {
     id = data.confluent_organization.main.id
   }
@@ -32,6 +56,11 @@ resource "confluent_flink_connection" "bedrock" {
     confluent_api_key.flink,
     confluent_role_binding.app_manager_env_admin,
   ]
+}
+
+moved {
+  from = confluent_flink_connection.bedrock
+  to   = confluent_flink_connection.bedrock[0]
 }
 
 # ---------------------------------------------------------------------------
@@ -190,10 +219,7 @@ module "model" {
     INPUT (`prompt` STRING)
     OUTPUT (`response` STRING)
     WITH (
-      'provider' = 'bedrock',
-      'task' = 'text_generation',
-      'bedrock.connection' = '${confluent_flink_connection.bedrock.display_name}',
-      'bedrock.params.max_tokens' = '8192'
+      ${local.fraud_model_with}
     );
   EOT
   depends_on       = [confluent_flink_connection.bedrock]

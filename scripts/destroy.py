@@ -123,7 +123,7 @@ def main():
         creds = dotenv_values(str(creds_file))
     else:
         _, creds = load_or_create_credentials_file(root)
-        ensure_confluent_login(creds)
+        ensure_confluent_login(creds, interactive=True)
         print("✓ Confluent CLI logged in")
         print("\n⚠️  WARNING: This permanently destroys the demo's Confluent Cloud environment and everything in it!")
         if input("\nAre you sure you want to proceed? (y/n): ").strip().lower() != "y":
