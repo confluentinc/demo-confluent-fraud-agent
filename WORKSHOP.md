@@ -98,7 +98,14 @@ credit is used first, so you typically won't be charged during the workshop.
 
    </details>
 
-3. Deploy in workshop mode:
+3. **Signed up to Confluent Cloud with SSO?** Sign in to the Confluent CLI first (skip this if you
+   signed up with an email and password):
+
+   ```bash
+   confluent login --no-browser
+   ```
+
+4. Deploy in workshop mode:
 
    ```bash
    uv run deploy --workshop
@@ -108,7 +115,7 @@ credit is used first, so you typically won't be charged during the workshop.
 
    | Prompt | Where to get it |
    |---|---|
-   | Confluent Cloud email / password | Your Confluent Cloud login: the **email and password you used to sign up** (**single sign-on?** Log into the Confluent CLI first with `confluent login --no-browser`, then press Enter at this prompt. If you skip that, `deploy` offers to run the SSO login for you) |
+   | Confluent Cloud email / password | Your Confluent Cloud login: the **email and password you used to sign up** (**single sign-on?** Press Enter at this prompt after the CLI login in step 3. If you skipped it, `deploy` offers to run the SSO login for you) |
    | Generate new Confluent Cloud API keys? | Answer `y` — `uv` creates the API key and secret for you |
    | Confluent Cloud API Key / Secret | Press **Enter** to confirm the key and secret `uv` just created |
    | AWS Access Key / Secret Key | **Only with `--bedrock`** — your AWS IAM user's access key with Bedrock access (or the one your instructor gave you). The default needs no AWS keys |
@@ -161,26 +168,6 @@ WITH (
   'confluent.params.max_tokens' = '8192'
 );
 ```
-
-<details>
-<summary>Deployed with <code>--bedrock</code>? Use this statement instead</summary>
-
-`uv run deploy --workshop --bedrock` creates a Bedrock connection from your AWS keys; point the
-model at it:
-
-```sql
-CREATE MODEL `fraud_model`
-INPUT (`prompt` STRING)
-OUTPUT (`response` STRING)
-WITH (
-  'provider' = 'bedrock',
-  'task' = 'text_generation',
-  'bedrock.connection' = 'bedrock-fraud-connection',
-  'bedrock.params.max_tokens' = '8192'
-);
-```
-
-</details>
 
 On its own the model just "thinks" — you'll give it actions and a job in the next sections.
 
