@@ -127,13 +127,27 @@ pipeline. It also writes a ready-to-use `.env` for the producer and dashboard.
 > [!NOTE]
 > Grab a coffee ☕ — it takes **5–7 minutes** to deploy.
 
-## 3. Connect the model — give the agent a brain
+## 3. Start the event stream — generate live activity
 
-Now we build the fraud-detection pipeline.
+Before building the pipeline, get data flowing so you can watch each stage light up as you
+create it. Two local apps do the work, both reading the `.env` Terraform already wrote (no
+config needed):
 
-Fraud rarely fits fixed if/else rules — catching it takes judgment. So the first thing you do
-is give the pipeline access to a large language model. This statement registers that model as
-`fraud_model` so Flink SQL can call it like any other function.
+- the **producer** — stands in for your customers, streaming synthetic transactions, logins,
+  and account changes into your topics;
+- the **dashboard** — the fraud analyst's screen (you'll start it at the end).
+
+**1. Start the producer.** Open a new terminal, `cd` into the repo root directory, and run
+(`uv` installs the Python dependencies on first run):
+
+```bash
+uv run producer
+```
+
+> [!NOTE]
+> Leave this running for the whole workshop and open a new terminal tab for anything else.
+
+**2. Open the Flink workspace.**
 
 1. Navigate to the [Flink UI](https://confluent.cloud/go/flink) and select the **environment**
    Terraform created (`fraud-agent-env-…`).
@@ -149,82 +163,29 @@ is give the pipeline access to a large language model. This statement registers 
 
    <img src="images/workshop/3_step3_3.png" alt="Set the workspace catalog and database" width="700">
 
-4. Run the statement below to create the model in your Flink catalog. `'provider' = 'confluent'`
-   is CSP Hosted model inference: Confluent invokes Claude for you, so there's no connection or
-   API key to manage.
+**3. Confirm events are flowing** — query the three input topics:
 
 ```sql
-CREATE MODEL `fraud_model`
-INPUT (`prompt` STRING)
-OUTPUT (`response` STRING)
-WITH (
-  'provider' = 'confluent',
-  'task' = 'text_generation',
-  'confluent.model' = 'anthropic.claude-sonnet-4-6',
-  'confluent.params.max_tokens' = '8192'
-);
+SELECT * FROM transactions LIMIT 5;
 ```
 
-On its own the model just "thinks" — you'll give it actions and a job in the next sections.
-
-## 4. Define the actions — give the agent hands
-
-A fraud analyst that can only *think* isn't useful; it has to *act* — flag a suspicious
-transaction, freeze a compromised account, or warn the customer. That takes two layers: a
-**function** (the actual action, implemented in the UDF JAR) and a **tool** (the plain-English
-*description* the agent reads to decide *when* to call that action).
-
-The three **functions** — `flag_transaction`, `freeze_account`, `notify_user` — were already
-created for you by Terraform (they reference the uploaded JAR by its artifact id). Your job is
-to expose each one as a **tool**.
-
-Here's the first tool, wrapping the `flag_transaction` function:
+<img src="images/workshop/3_step3_4.png" alt="transactions query results" width="700">
 
 ```sql
-CREATE TOOL `flag_transaction_tool`
-USING FUNCTION `flag_transaction`
-WITH (
-  'type' = 'function',
-  'description' = 'Flag a specific transaction as potentially fraudulent for manual review. Arguments: transaction_id, reason.'
-);
+SELECT * FROM user_logins LIMIT 5;
 ```
 
-### 🛠️ Challenge: Forge the other two tools
-
-**Your turn.** Complete the two tools below by filling in the `<function-name>` each one wraps,
-following the pattern above.
+<img src="images/workshop/3_step3_5.png" alt="user_logins query results" width="700">
 
 ```sql
-CREATE TOOL `freeze_account_tool`
-USING FUNCTION `<function-name>`
-WITH (
-  'type' = 'function',
-  'description' = 'Temporarily freeze a user account due to suspected fraud. Arguments: user_id, reason.'
-);
+SELECT * FROM account_changes LIMIT 5;
 ```
 
-```sql
-CREATE TOOL `notify_user_tool`
-USING FUNCTION `<function-name>`
-WITH (
-  'type' = 'function',
-  'description' = 'Send a fraud alert notification to the user. Arguments: user_id, message.'
-);
-```
+<img src="images/workshop/3_step3_6.png" alt="account_changes query results" width="700">
 
-<details>
-<summary>Hint — how do I find the function names?</summary>
+## 4. Build each user's activity profile — turn events into a story
 
-Terraform already created the functions for you. List them with:
-
-```sql
-SHOW USER FUNCTIONS;
-```
-</details>
-
-## 5. Build each user's activity profile — turn events into a story
-
-<img src="images/workshop/5_step5_arch.png" alt="Pipeline — session-window aggregation into activity_profiles" width="800">
+<img src="images/workshop/4_step4_arch.png" alt="Pipeline — session-window aggregation into activity_profiles" width="800">
 
 A fraud analyst needs one user's recent behavior in a single view, but events arrive as three
 separate raw streams (transactions, logins, account changes). This statement stitches them
@@ -282,9 +243,100 @@ GROUP BY `user_id`, `window_start`, `window_end`;
 > [!NOTE]
 > This is a continuous statement — keep this cell **RUNNING** for the whole workshop.
 
-## 6. Assemble the fraud analyst — create the agent
 
-<img src="images/workshop/6_step6_arch.png" alt="Pipeline — Fraud Streaming Agent producing fraud_alerts" width="800">
+**Confirm the activity profiles are being built** — each row is one user's session-window
+profile, the exact text the agent will score:
+
+```sql
+SELECT * FROM activity_profiles;
+```
+
+<img src="images/workshop/4_step4_1.png" alt="activity_profiles query results" width="700">
+
+## 5. Connect the model — give the agent a brain
+
+Fraud rarely fits fixed if/else rules — catching it takes judgment. So the next thing you do
+is give the pipeline access to a large language model. This statement registers that model as
+`fraud_model` so Flink SQL can call it like any other function.
+
+Run the statement below to create the model in your Flink catalog. `'provider' = 'confluent'`
+is CSP Hosted model inference: Confluent invokes Claude for you, so there's no connection or
+API key to manage.
+
+```sql
+CREATE MODEL `fraud_model`
+INPUT (`prompt` STRING)
+OUTPUT (`response` STRING)
+WITH (
+  'provider' = 'confluent',
+  'task' = 'text_generation',
+  'confluent.model' = 'anthropic.claude-sonnet-4-6',
+  'confluent.params.max_tokens' = '8192'
+);
+```
+
+On its own the model just "thinks" — you'll give it actions and a job in the next sections.
+
+
+## 6. Define the actions — give the agent hands
+
+A fraud analyst that can only *think* isn't useful; it has to *act* — flag a suspicious
+transaction, freeze a compromised account, or warn the customer. That takes two layers: a
+**function** (the actual action, implemented in the UDF JAR) and a **tool** (the plain-English
+*description* the agent reads to decide *when* to call that action).
+
+The three **functions** — `flag_transaction`, `freeze_account`, `notify_user` — were already
+created for you by Terraform (they reference the uploaded JAR by its artifact id). Your job is
+to expose each one as a **tool**.
+
+Here's the first tool, wrapping the `flag_transaction` function:
+
+```sql
+CREATE TOOL `flag_transaction_tool`
+USING FUNCTION `flag_transaction`
+WITH (
+  'type' = 'function',
+  'description' = 'Flag a specific transaction as potentially fraudulent for manual review. Arguments: transaction_id, reason.'
+);
+```
+
+### 🛠️ Challenge: Forge the other two tools
+
+**Your turn.** Complete the two tools below by filling in the `<function-name>` each one wraps,
+following the pattern above.
+
+```sql
+CREATE TOOL `freeze_account_tool`
+USING FUNCTION `<function-name>`
+WITH (
+  'type' = 'function',
+  'description' = 'Temporarily freeze a user account due to suspected fraud. Arguments: user_id, reason.'
+);
+```
+
+```sql
+CREATE TOOL `notify_user_tool`
+USING FUNCTION `<function-name>`
+WITH (
+  'type' = 'function',
+  'description' = 'Send a fraud alert notification to the user. Arguments: user_id, message.'
+);
+```
+
+<details>
+<summary>Hint — how do I find the function names?</summary>
+
+Terraform already created the functions for you. List them with:
+
+```sql
+SHOW USER FUNCTIONS;
+```
+</details>
+
+
+## 7. Assemble the fraud analyst — create the agent
+
+<img src="images/workshop/7_step7_arch.png" alt="Pipeline — Fraud Streaming Agent producing fraud_alerts" width="800">
 
 Now combine the brain, the hands, and a **job description**. The prompt is where the use-case
 logic lives: it tells the agent how to score risk from 0–100, which tools to call at each score
@@ -294,14 +346,14 @@ single strict-JSON verdict you can store — it *is* the fraud policy.
 ### 🎯 Challenge: Give the agent its model
 
 Build the agent **either** way below — the result is the same. Your challenge in both: point it
-at the model you created in section 3 (need the name? run `SHOW MODELS;`).
+at the model you created in section 5 (need the name? run `SHOW MODELS;`).
 
 **Option A — Streaming Agents UI**
 
 1. In the Flink Workspace left panel, expand your cluster, find **Agents**, and click the **+**.
    (Or from your environment page, open **Streaming agents → Create streaming agent**.)
 
-   <img src="images/workshop/6_step6_1.png" alt="Left panel — Agents → Create an agent" width="450">
+   <img src="images/workshop/7_step7_1.png" alt="Left panel — Agents → Create an agent" width="450">
 
 2. **Agent name** — `fraud_detection_agent`.
 3. 🎯 **Model** — pick the model you created from the dropdown.
@@ -346,13 +398,13 @@ at the model you created in section 3 (need the name? run `SHOW MODELS;`).
   {"user_id": "<copy from input>", "risk_score": <0-100 integer>, "reasoning": "<one or two sentences>", "actions_taken": ["freeze_account"|"flag_transaction"|"notify_user"], "flagged_transaction_ids": ["<copied transaction ids>"]}
   ```
 
-   <img src="images/workshop/6_step6_2.png" alt="Create Streaming Agent — name, instructions, model" width="500">
+   <img src="images/workshop/7_step7_2.png" alt="Create Streaming Agent — name, instructions, model" width="500">
 
 5. Click on **Advanced Configurations**.
 6. Click on **Add new Tool**, add all three — `flag_transaction_tool`, `freeze_account_tool`,
    `notify_user_tool` — then click **Add**.
 
-   <img src="images/workshop/6_step6_3.png" alt="Add agent tools — select the three tools and click Add" width="500">
+   <img src="images/workshop/7_step7_3.png" alt="Add agent tools — select the three tools and click Add" width="500">
 
 > [!WARNING]
 > Don't forget to click **Add** — otherwise the tools won't be attached to the agent.
@@ -362,7 +414,7 @@ at the model you created in section 3 (need the name? run `SHOW MODELS;`).
    - `handle_exception` = `continue`
    - `max_consecutive_failures` = `5`
 
-   <img src="images/workshop/6_step6_4.png" alt="Advanced configurations — tools table and settings" width="500">
+   <img src="images/workshop/7_step7_4.png" alt="Advanced configurations — tools table and settings" width="500">
 
 8. Click on **Create agent** to create the agent.
 
@@ -422,7 +474,8 @@ WITH (
 The agent is now **created but not running** — nothing calls it yet. In the next step we put it
 to work.
 
-## 7. Detect fraud in real time — put the analyst to work
+
+## 8. Detect fraud in real time — put the analyst to work
 
 This is the payoff. For **every** activity profile that appears, this statement calls the agent,
 lets it score and act, and writes the verdict — risk score, reasoning, actions taken, and
@@ -459,7 +512,7 @@ FROM `scored`;
 <details>
 <summary>Hint — how do I find the agent name?</summary>
 
-You created the agent in section 6. List your agents with:
+You created the agent in section 7. List your agents with:
 
 ```sql
 SHOW AGENTS;
@@ -469,57 +522,19 @@ SHOW AGENTS;
 > [!NOTE]
 > This is a continuous statement — keep this cell **RUNNING** for the whole workshop.
 
-## 8. Generate activity and watch alerts (~8–12 min)
 
-Your pipeline is live but idle — no events are flowing yet. Now you'll simulate customer
-activity and watch the agent score it in real time. Two local apps do this, both reading the
-`.env` Terraform already wrote (no config needed):
-
-- the **producer** — stands in for your customers, streaming synthetic transactions, logins,
-  and account changes into your topics;
-- the **dashboard** — the fraud analyst's screen, showing the agent's alerts as they land.
-
-**1. Open a new terminal and `cd` into the repo root directory.**
-
-**2. Start the producer** (`uv` installs the Python dependencies on first run):
-
-```bash
-uv run producer
-```
-
-> [!NOTE]
-> Leave this running and open a new terminal tab for the next steps.
-
-**3. Confirm events are flowing** — back in the Flink Workspace, query the input topics:
+You can watch the high-risk verdicts directly in the workspace:
 
 ```sql
-SELECT * FROM transactions LIMIT 5;
+SELECT * FROM fraud_alerts WHERE risk_score >= 70;
 ```
 
-<img src="images/workshop/8_step8_1.png" alt="transactions query results" width="700">
+<img src="images/workshop/8_step8_1.png" alt="fraud_alerts high-risk query results" width="700">
 
-```sql
-SELECT * FROM user_logins LIMIT 5;
-```
+## 9. Watch the alerts — start the dashboard
 
-<img src="images/workshop/8_step8_2.png" alt="user_logins query results" width="700">
-
-```sql
-SELECT * FROM account_changes LIMIT 5;
-```
-
-<img src="images/workshop/8_step8_3.png" alt="account_changes query results" width="700">
-
-**4. Confirm the activity profiles are being built** — each row is one user's session-window
-profile, the exact text the agent scores:
-
-```sql
-SELECT * FROM activity_profiles;
-```
-
-<img src="images/workshop/8_step8_4.png" alt="activity_profiles query results" width="700">
-
-**5. Add another terminal and start the dashboard:**
+With the producer still running, open a new terminal tab in the repo root and start the
+dashboard:
 
 ```bash
 uv run dashboard
@@ -529,16 +544,7 @@ Give it ~1–2 minutes: as each user's activity burst closes its session window,
 it and high-risk cases surface as alerts. Keep the producer running — the dashboard shows alerts
 generated from here on.
 
-<img src="images/workshop/8_step8_5.png" alt="Fraud Detection Dashboard" width="800">
-
-
-You can also watch the high-risk verdicts directly in the workspace:
-
-```sql
-SELECT * FROM fraud_alerts WHERE risk_score >= 70;
-```
-
-<img src="images/workshop/8_step8_6.png" alt="fraud_alerts high-risk query results" width="700">
+<img src="images/workshop/9_step9_1.png" alt="Fraud Detection Dashboard" width="800">
 
 ## 🎉 That's a wrap
 
@@ -546,7 +552,7 @@ You just built a real-time, AI-powered fraud detection pipeline — no batch job
 rules engine. Raw events stream in, Flink windows them per user, and a Claude-powered Streaming
 Agent scores every burst and acts in seconds. Not bad for an hour's work.
 
-## 9. Cleanup
+## 10. Cleanup
 
 Stop the producer by running **Ctrl+C** in its terminal. Then tear it all down (so the credits
 last):
@@ -554,3 +560,4 @@ last):
 ```bash
 uv run destroy
 ```
+

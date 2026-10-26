@@ -130,9 +130,9 @@ cd tools-udf && ./build.sh    # then commit target/fraud-tools.jar
   proportional to live traffic instead of replaying topic history through the model.
 - **Where the model id lives depends on the provider.** CSP Hosted: `var.csp_hosted_model`
   (`'confluent.model'` in `CREATE MODEL`; case-sensitive). Bedrock: the connection endpoint URL
-  (`local.bedrock_model_id` → `local.bedrock_endpoint`), NOT in `CREATE MODEL`. The WORKSHOP.md
-  model block shows the CSP form, with the Bedrock form in a `<details>` for `--bedrock`; keep
-  both in sync with `flink.tf`.
+  (`local.bedrock_model_id` → `local.bedrock_endpoint`), NOT in `CREATE MODEL`. WORKSHOP.md
+  is CSP Hosted only (no Bedrock/AWS prerequisites, prompts, or `CREATE MODEL` variant); keep its
+  model block in sync with `flink.tf`.
 - **Topic = Flink table name**, snake_case: `transactions`, `user_logins`,
   `account_changes`, `fraud_alerts`. Keep producer/dashboard/SQL in sync if renaming.
 - **Avro, Flink owns the schema.** Source tables are created by Flink (`CREATE TABLE`,
