@@ -4,8 +4,8 @@ In this workshop you deploy the Confluent Cloud infrastructure with Terraform, t
 **real-time fraud detection AI pipeline yourself**.
 
 The pipeline watches three live streams — **transactions**, **logins**, and **account changes** —
-and stitches each user's recent activity into a per-user profile. A **Streaming Agent** (Claude
-on AWS Bedrock) then scores every profile for fraud, calls tools to act, and writes the verdicts
+and stitches each user's recent activity into a per-user profile. A **Streaming Agent** (Claude,
+via Confluent's CSP Hosted model inference) then scores every profile for fraud, calls tools to act, and writes the verdicts
 to a `fraud_alerts` stream.
 
 ![Architecture — end-to-end pipeline](images/Architecture.png)
@@ -27,11 +27,10 @@ These are **not** part of the timed hour. Complete them before the workshop:
 - [ ] **Confluent Cloud account and a payment method (or promo code)** — the two steps in
       [Set up Confluent Cloud](#1-set-up-confluent-cloud) below. (`uv run deploy` creates the
       Cloud API key for you.)
-- [ ] **AWS account with an IAM user** that has a long-lived access key & secret and the
-      `bedrock:InvokeModel` permission.
-- [ ] **Claude model access enabled in Amazon Bedrock**, region **`us-east-1`** — enable
-      Anthropic Claude on the **Model access** page. Approval can lag, so do this early;
-      without it, `AI_RUN_AGENT` fails with AccessDenied and no alerts appear.
+- [ ] **No AWS account needed** — the agent's Claude model is CSP Hosted by Confluent. *Only*
+      if you deploy with `--bedrock` (your own Bedrock keys instead) do you need an AWS IAM user
+      with a long-lived access key & secret, the `bedrock:InvokeModel` permission, and Anthropic
+      Claude enabled on Bedrock's **Model access** page in **`us-east-1`**.
 - [ ] **Tools installed:** [Terraform](https://github.com/hashicorp/terraform),
       [Git](https://git-scm.com/), [Python 3.11+](https://www.python.org/downloads/).
 
@@ -112,14 +111,14 @@ credit is used first, so you typically won't be charged during the workshop.
    | Confluent Cloud email / password | Your Confluent Cloud login: the **email and password you used to sign up** (**single sign-on?** Log into the Confluent CLI first with `confluent login --no-browser`, then press Enter at this prompt. If you skip that, `deploy` offers to run the SSO login for you) |
    | Generate new Confluent Cloud API keys? | Answer `y` — `uv` creates the API key and secret for you |
    | Confluent Cloud API Key / Secret | Press **Enter** to confirm the key and secret `uv` just created |
-   | AWS Access Key / Secret Key | Your AWS IAM user's access key with Bedrock access (or the one your instructor gave you) |
+   | AWS Access Key / Secret Key | **Only with `--bedrock`** — your AWS IAM user's access key with Bedrock access (or the one your instructor gave you). The default needs no AWS keys |
 
    Answer `y` at **Ready to deploy?**.
 
    <img src="images/workshop/2_deploy_1.png" alt="uv run deploy — Configuration Summary and Ready to deploy? prompt" width="600">
 
 This provisions the environment, Kafka cluster, Schema Registry, Flink compute pool, the
-Bedrock connection, the tools JAR artifact, and the **4 tables** — but **not** the AI
+tools JAR artifact, and the **4 tables** (plus a Bedrock connection with `--bedrock`) — but **not** the AI
 pipeline. It also writes a ready-to-use `.env` for the producer and dashboard.
 
 > [!NOTE]
@@ -147,7 +146,27 @@ is give the pipeline access to a large language model. This statement registers 
 
    <img src="images/workshop/3_step3_3.png" alt="Set the workspace catalog and database" width="700">
 
-4. Run the statement below to create the model in your Flink catalog.
+4. Run the statement below to create the model in your Flink catalog. `'provider' = 'confluent'`
+   is CSP Hosted model inference: Confluent invokes Claude for you, so there's no connection or
+   API key to manage.
+
+```sql
+CREATE MODEL `fraud_model`
+INPUT (`prompt` STRING)
+OUTPUT (`response` STRING)
+WITH (
+  'provider' = 'confluent',
+  'task' = 'text_generation',
+  'confluent.model' = 'anthropic.claude-sonnet-4-6',
+  'confluent.params.max_tokens' = '8192'
+);
+```
+
+<details>
+<summary>Deployed with <code>--bedrock</code>? Use this statement instead</summary>
+
+`uv run deploy --workshop --bedrock` creates a Bedrock connection from your AWS keys; point the
+model at it:
 
 ```sql
 CREATE MODEL `fraud_model`
@@ -160,6 +179,8 @@ WITH (
   'bedrock.params.max_tokens' = '8192'
 );
 ```
+
+</details>
 
 On its own the model just "thinks" — you'll give it actions and a job in the next sections.
 
@@ -273,7 +294,7 @@ GROUP BY `user_id`, `window_start`, `window_end`;
 > [!IMPORTANT]
 > The two `SET`s in the block above matter:
 > - **`idle-timeout = '5 s'`** keeps the session-window watermark advancing — without it alerts start, then dry up.
-> - **`startup.mode = 'latest-offset'`** reads only new events. Everyone shares one Bedrock account, so replaying topic history would spike the shared quota.
+> - **`startup.mode = 'latest-offset'`** reads only new events. Every row is a paid model call, so replaying topic history would multiply cost and load.
 
 > [!NOTE]
 > This is a continuous statement — keep this cell **RUNNING** for the whole workshop.
@@ -424,7 +445,7 @@ This is the payoff. For **every** activity profile that appears, this statement 
 lets it score and act, and writes the verdict — risk score, reasoning, actions taken, and
 flagged transaction ids — into the `fraud_alerts` table. It runs **continuously**: each new
 burst of user activity is analyzed within seconds. This is also the statement that actually
-calls Bedrock, so leave it **RUNNING**.
+calls the model, so leave it **RUNNING**.
 
 ### 🚀 Challenge: Unleash the agent
 

@@ -6,8 +6,9 @@ Guidance for working in this repository.
 
 Real-time fraud detection running entirely on **Confluent Cloud**. Streaming user
 activity is windowed by **Confluent Cloud for Apache Flink** and analyzed by a
-**Streaming Agent** (Confluent Intelligence) backed by **AWS Bedrock (Claude)**, which
-emits fraud alerts. A local Python **producer** generates synthetic events and a local
+**Streaming Agent** (Confluent Intelligence) backed by **Claude** — CSP Hosted Flink Model
+Inference by default (`'provider' = 'confluent'`, no AWS keys), or the user's own AWS Bedrock
+with `uv run deploy --bedrock` — which emits fraud alerts. A local Python **producer** generates synthetic events and a local
 **Streamlit dashboard** visualizes them.
 
 Everything except the producer and dashboard runs in Confluent Cloud. There is **no local
@@ -21,7 +22,7 @@ producer (local, Avro+SASL) → transactions · user_logins · account_changes (
         → 3s event-time SESSION window per user
         → activity_profiles table/topic  (one text profile per user per window; queryable)
   → [statement 2: detect-fraud] AI_RUN_AGENT(fraud_detection_agent, profile_text, user_id)
-        [Bedrock Claude + 3 UDF tools] → parse JSON verdict → fraud_alerts (topic)
+        [Claude (CSP Hosted | Bedrock) + 3 UDF tools] → parse JSON verdict → fraud_alerts (topic)
   → dashboard (local, Avro+SASL)
 ```
 
@@ -36,9 +37,9 @@ a node in Stream Lineage). All Flink/agent/model/tool SQL is defined inline in
 | Path | Purpose |
 |------|---------|
 | `terraform/main.tf` | Env, cluster, Schema Registry, compute pool, service account, API keys, ACLs, and all fixed `locals` (region, model id, names). |
-| `terraform/flink.tf` | Bedrock connection, tools artifact upload, and every Flink statement: source tables, `CREATE MODEL`, `CREATE FUNCTION`/`CREATE TOOL` ×3, `CREATE AGENT`, the `create-activity-profiles` windowing statement (`module.profiles`), and the `detect-fraud` agent `INSERT` (`module.detect`). |
+| `terraform/flink.tf` | `llm_provider` switch (`local.fraud_model_with`) + the Bedrock connection (only for `bedrock`), tools artifact upload, and every Flink statement: source tables, `CREATE MODEL`, `CREATE FUNCTION`/`CREATE TOOL` ×3, `CREATE AGENT`, the `create-activity-profiles` windowing statement (`module.profiles`), and the `detect-fraud` agent `INSERT` (`module.detect`). |
 | `terraform/connect.tf` | Writes the repo-root `.env` consumed by the local apps. |
-| `terraform/variables.tf` | The **4** required inputs (Confluent key/secret, `aws_bedrock_access_key`/`aws_bedrock_secret_key`) + optional `aws_session_token` + the `deploy_flink_pipeline` mode flag (default `true`). |
+| `terraform/variables.tf` | Confluent key/secret (required), `llm_provider` (`confluent` default \| `bedrock`) + `csp_hosted_model`, `aws_bedrock_access_key`/`aws_bedrock_secret_key`/`aws_session_token` (only used for `bedrock`, default `""`), and the `deploy_flink_pipeline` mode flag (default `true`). |
 | `terraform/outputs.tf` | Includes the shared-name outputs (`app_manager_*_api_key`, `confluent_*_endpoint`, …) that `scripts/mcp_setup.py` reads — same names as `terraform/core` in the sibling streaming-agent repos. |
 | `scripts/` | Flat package behind the `uv run` entry points in `pyproject.toml`: `deploy`, `destroy`, `dashboard`, `setup-mcp`, `setup-rtce`, `api-keys`, `test-bedrock` (+ shared helpers `credentials`, `login_checks`, `terraform`, `terraform_runner`, `tfvars`, `ui`). Ported from the Streamhouse / quickstart-streaming-agents repos; keep them shaped alike. |
 | `credentials.env` | Gitignored; written by `uv run deploy` (template: `credentials.env.example`). Deploy generates `terraform/terraform.tfvars` from it on every run. |
@@ -57,7 +58,8 @@ a node in Stream Lineage). All Flink/agent/model/tool SQL is defined inline in
 
 ```bash
 # Deploy everything (prompts once, saves credentials.env, writes tfvars + .env)
-uv run deploy                 # --workshop: workshop mode; --testing/--automated: non-interactive from credentials.env
+uv run deploy                 # --workshop: workshop mode; --bedrock: own AWS Bedrock keys instead of CSP Hosted;
+                              # --testing/--automated: non-interactive from credentials.env
 
 # Run apps (after deploy)
 uv run producer
@@ -81,13 +83,26 @@ cd tools-udf && ./build.sh    # then commit target/fraud-tools.jar
 
 ## Key conventions & constraints
 
-- **4 inputs only.** Region (`us-east-1`), Claude model, resource names, and sizing are
-  fixed in `terraform/main.tf` `locals`. Don't add user-facing variables without reason.
-  (The one exception is the `deploy_flink_pipeline` mode flag below.)
+- **Minimal inputs.** Only the Confluent key/secret are required (plus the Bedrock key/secret
+  with `--bedrock`). Region (`us-east-1`), resource names, and sizing are fixed in
+  `terraform/main.tf` `locals`. Don't add user-facing variables without reason. (The exceptions
+  are the `deploy_flink_pipeline` mode flag below and the `llm_provider` switch.)
+- **Two LLM providers via `llm_provider`.** Default `confluent` = CSP Hosted Flink Model
+  Inference: `fraud_model` is `'provider' = 'confluent'`, `'confluent.model' =
+  var.csp_hosted_model` (`anthropic.claude-sonnet-4-6`), no connection, no AWS keys, and deploy
+  skips the AWS prompts and the Bedrock check. `bedrock` (`uv run deploy --bedrock`, saved as
+  `TF_VAR_llm_provider` in `credentials.env`) creates `confluent_flink_connection.bedrock[0]`
+  (count-gated; a `moved` block keeps pre-switch state) and renders the exact Bedrock
+  `CREATE MODEL` already applied, so existing Bedrock deployments plan as a no-op. Deploy resolves
+  the provider as: `--bedrock` / exported `TF_VAR_llm_provider`, else **what Terraform state
+  shows is deployed** (the Bedrock connection exists ⇒ `bedrock`), else `credentials.env`, else
+  `confluent` (`scripts/tfvars.py` `llm_provider_for`). State wins over the saved value so a live
+  Bedrock deployment is never silently swapped. **Switching provider on an applied deployment
+  re-runs `CREATE MODEL` against an existing name — `uv run destroy` first.**
 - **Two deployment paths via `deploy_flink_pipeline`.** Default `true` = the one-command
   demo (deploys everything). `false` (`uv run deploy --workshop`, persisted as
   `TF_VAR_deploy_flink_pipeline=false` in `credentials.env`) = workshop
-  mode: Terraform deploys infra + the Bedrock connection + tools JAR + the 4 tables **+ the 3
+  mode: Terraform deploys infra + (with `--bedrock`) the Bedrock connection + tools JAR + the 4 tables **+ the 3
   `CREATE FUNCTION` statements** (`fn_*`, ungated — they reference the artifact id, so we don't
   make participants handle it). The 7 hands-on modules (`model`, `tool_*`, `agent`, `profiles`,
   `detect`) are gated off with `count` so participants run them by hand from the Flink UI per
@@ -112,10 +127,12 @@ cd tools-udf && ./build.sh    # then commit target/fraud-tools.jar
   by `SET 'sql.tables.scan.startup.mode' = 'latest-offset';` — **workshop only** (demo
   intentionally reprocesses from earliest); and (c) both continuous statements carry a
   `SET 'client.statement-name' = '…';`. Latest-offset keeps each participant's agent calls
-  proportional to live traffic instead of replaying topic history through the shared Bedrock
-  account.
-- **Bedrock model id lives in the connection endpoint URL** (`local.bedrock_model_id` →
-  `local.bedrock_endpoint`), NOT in `CREATE MODEL`. Change that one line to switch models.
+  proportional to live traffic instead of replaying topic history through the model.
+- **Where the model id lives depends on the provider.** CSP Hosted: `var.csp_hosted_model`
+  (`'confluent.model'` in `CREATE MODEL`; case-sensitive). Bedrock: the connection endpoint URL
+  (`local.bedrock_model_id` → `local.bedrock_endpoint`), NOT in `CREATE MODEL`. The WORKSHOP.md
+  model block shows the CSP form, with the Bedrock form in a `<details>` for `--bedrock`; keep
+  both in sync with `flink.tf`.
 - **Topic = Flink table name**, snake_case: `transactions`, `user_logins`,
   `account_changes`, `fraud_alerts`. Keep producer/dashboard/SQL in sync if renaming.
 - **Avro, Flink owns the schema.** Source tables are created by Flink (`CREATE TABLE`,
@@ -147,7 +164,7 @@ cd tools-udf && ./build.sh    # then commit target/fraud-tools.jar
   first, make all tool calls up front, never reverse a call, final message = the single JSON
   object only), (b) `handle_exception = 'continue'` (skip a bad row instead of counting it as
   a failure), and (c) `max_consecutive_failures = '5'`. **Symptom if regressed:** `detect-fraud`
-  goes FAILED after a few minutes and the dashboard empties out, even though Bedrock access is
+  goes FAILED after a few minutes and the dashboard empties out, even though model access is
   fine. (`handle_exception` wasn't in the docs at time of writing but is accepted by the API.)
 - **Watermark idle-timeout is required for steady alerts.** Confluent Cloud's default
   "progressive idleness" grows the idle-partition timeout with statement age (10s → up to
@@ -168,10 +185,10 @@ cd tools-udf && ./build.sh    # then commit target/fraud-tools.jar
   `/_stcore/health` is up; `--no-browser` for background runs.
 - **Never run full `terraform apply` for a targeted change** — use `-target`. `uv run deploy` is the
   full-stack path.
-- **You can't deploy without the user's Confluent + AWS credentials** (`credentials.env`). Validate
-  with `terraform validate`.
-- **Bedrock model access:** the IAM user must have model access granted in the Bedrock
-  console for the configured Claude model in `us-east-1`.
+- **You can't deploy without the user's Confluent credentials** (plus AWS credentials with
+  `--bedrock`) in `credentials.env`. Validate with `terraform validate`.
+- **Bedrock model access (`--bedrock` only):** the IAM user must have model access granted in the
+  Bedrock console for the configured Claude model in `us-east-1`.
 - **Producer/consumer Python stdout is buffered** when backgrounded — absence of printed
   cycles ≠ failure. Verify by consuming topics, not by reading producer stdout.
 - **Docker runtime here is colima**, not Docker Desktop (`colima start` before `build.sh`).

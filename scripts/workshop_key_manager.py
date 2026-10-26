@@ -5,7 +5,8 @@ Workshop Key Manager — create and manage scoped AWS credentials for workshops.
 Lets a workshop organizer mint one AWS IAM user + access key pair, scoped to
 exactly what this demo uses AWS for: invoking Claude Sonnet 4.5 on Bedrock
 through the Flink Bedrock connection (terraform/flink.tf) that backs the fraud
-detection streaming agent. Nothing else in this demo touches AWS.
+detection streaming agent. Nothing else in this demo touches AWS. Only needed
+for `uv run deploy --bedrock`; the default CSP Hosted model needs no AWS keys.
 
 The credentials go into API-KEYS-AWS.md (and into credentials.env as
 TF_VAR_aws_bedrock_access_key / TF_VAR_aws_bedrock_secret_key when that file

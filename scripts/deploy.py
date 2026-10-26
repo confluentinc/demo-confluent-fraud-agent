@@ -3,10 +3,11 @@
 Deploy the real-time fraud-detection demo to Confluent Cloud.
 
 Runs `terraform apply` in terraform/ (environment, cluster, Schema Registry,
-Flink compute pool, keys, Bedrock connection, tools JAR, tables, and — unless
-in workshop mode — the model, tools, agent, windowing, and detection
-statements). Terraform also writes the repo-root .env the producer and
-dashboard read.
+Flink compute pool, keys, tools JAR, tables, the Bedrock connection only with
+--bedrock, and — unless in workshop mode — the model, tools, agent, windowing,
+and detection statements). The agent's model is CSP Hosted Flink Model Inference
+by default (no AWS keys); --bedrock backs it with your own AWS Bedrock keys.
+Terraform also writes the repo-root .env the producer and dashboard read.
 
 Credentials live in credentials.env (gitignored): the first interactive run
 prompts for them and saves them; later runs reuse them.
@@ -14,6 +15,7 @@ prompts for them and saves them; later runs reuse them.
 Usage:
   uv run deploy               # interactive; the only command a person needs
   uv run deploy --workshop    # workshop mode: participants build the AI pipeline by hand (WORKSHOP.md)
+  uv run deploy --bedrock     # back the agent with AWS Bedrock (your own AWS keys) instead of CSP Hosted
   uv run deploy --automated   # bots: non-interactive from credentials.env, registers the MCP server with Claude Code
   uv run deploy --testing     # bots: non-interactive from credentials.env, no MCP registration
 """
@@ -36,7 +38,13 @@ from scripts.login_checks import (
 )
 from scripts.terraform import get_project_root, read_outputs, terraform_dir
 from scripts.terraform_runner import run_terraform
-from scripts.tfvars import is_workshop_mode, write_tfvars_for_deployment
+from scripts.tfvars import (
+    LLM_PROVIDER_KEY,
+    LLM_PROVIDERS,
+    is_workshop_mode,
+    llm_provider_for,
+    write_tfvars_for_deployment,
+)
 from scripts.ui import display_value, prompt_with_default
 
 DEFAULT_REGION = "us-east-1"  # fixed in terraform/main.tf locals
@@ -44,6 +52,8 @@ DEFAULT_PREFIX = "fraud-agent"  # fixed in terraform/main.tf locals
 REQUIRED_CREDENTIALS = {
     "TF_VAR_confluent_cloud_api_key": "Confluent Cloud API Key",
     "TF_VAR_confluent_cloud_api_secret": "Confluent Cloud API Secret",
+}
+BEDROCK_REQUIRED_CREDENTIALS = {
     "TF_VAR_aws_bedrock_access_key": "AWS Bedrock Access Key",
     "TF_VAR_aws_bedrock_secret_key": "AWS Bedrock Secret Key",
 }
@@ -127,6 +137,61 @@ def _deploy(root, creds: dict) -> None:
     print("\n✓ Deployment completed successfully!")
 
 
+def _resolve_llm_provider(root, creds: dict, bedrock: bool) -> str:
+    """--bedrock, else an exported TF_VAR_llm_provider, else llm_provider_for()'s state/saved rule.
+
+    Exits cleanly on an unknown provider value.
+    """
+    requested = "bedrock" if bedrock else (os.environ.get(LLM_PROVIDER_KEY) or "").strip() or None
+    try:
+        return llm_provider_for(root, creds, requested)
+    except ValueError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+
+
+def _prompt_aws_credentials(creds_file, creds: dict) -> None:
+    """The --bedrock flow: ambient AWS credentials first, else prompt; saves to credentials.env."""
+    # AWS credentials power the Flink Bedrock connection the agent runs on. Try the
+    # ambient AWS credential chain first (SSO login, env vars, a profile).
+    print("\nAWS credentials power the Bedrock connection the fraud agent runs on (Claude in us-east-1).")
+    access_key = secret_key = token = ""
+    saved_key = creds.get("TF_VAR_aws_bedrock_access_key", "")
+    ambient = None if saved_key else _detect_ambient_aws_credentials()
+    if ambient:
+        detected_key, detected_secret, detected_token = ambient
+        masked = f"{detected_key[:4]}...{detected_key[-4:]}" if len(detected_key) > 8 else detected_key
+        if input(f"Detected AWS credentials in your environment ({masked}). Use these? (Y/n): ").strip().lower() in (
+            "",
+            "y",
+        ):
+            access_key, secret_key, token = detected_key, detected_secret, detected_token
+            if token:
+                print(
+                    "  Note: these are temporary credentials. The Bedrock connection stops working when they"
+                    "\n  expire; use a long-lived IAM user key (`uv run api-keys create`) for a lasting demo."
+                )
+
+    if not access_key:
+        access_key = prompt_with_default("AWS Access Key", saved_key)
+        secret_key = prompt_with_default("AWS Secret Key", creds.get("TF_VAR_aws_bedrock_secret_key", ""), secret=True)
+        if access_key.startswith("ASIA"):
+            print(
+                "Temporary credentials need a session token too — that's a long string"
+                "\n(300-400 chars) that can freeze some terminals on paste. If it does,"
+                "\nCtrl-C and re-run after `export AWS_SESSION_TOKEN=...` (and"
+                "\nAWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY) in your shell, so this can"
+                "\nauto-detect it instead of needing it pasted here."
+            )
+            token = prompt_with_default(
+                "AWS Session Token (temp creds)", creds.get("TF_VAR_aws_session_token", ""), secret=True
+            )
+
+    _save_env_safe(creds_file, "TF_VAR_aws_bedrock_access_key", access_key)
+    _save_env_safe(creds_file, "TF_VAR_aws_bedrock_secret_key", secret_key)
+    _save_env_safe(creds_file, "TF_VAR_aws_session_token", token)
+
+
 def _check_bedrock(creds: dict) -> None:
     """Warn (never fail) when the AWS key can't invoke the demo's Claude model."""
     try:
@@ -206,6 +271,11 @@ def main():
         action="store_true",
         help="Bots: load credentials.env, skip prompts, no MCP registration",
     )
+    parser.add_argument(
+        "--bedrock",
+        action="store_true",
+        help="Back the fraud agent with AWS Bedrock (your own AWS keys) instead of CSP Hosted inference (saved)",
+    )
     args = parser.parse_args()
     if args.automated and args.testing:
         parser.error("--automated and --testing are mutually exclusive")
@@ -222,8 +292,11 @@ def main():
             sys.exit(1)
         if args.workshop:
             set_key(str(creds_file), "TF_VAR_deploy_flink_pipeline", "false")
+        llm_provider = _resolve_llm_provider(root, dotenv_values(str(creds_file)), args.bedrock)
+        set_key(str(creds_file), LLM_PROVIDER_KEY, llm_provider)
         creds = dotenv_values(str(creds_file))
-        missing = [label for key, label in REQUIRED_CREDENTIALS.items() if not (creds.get(key) or "").strip()]
+        required = {**REQUIRED_CREDENTIALS, **(BEDROCK_REQUIRED_CREDENTIALS if llm_provider == "bedrock" else {})}
+        missing = [label for key, label in required.items() if not (creds.get(key) or "").strip()]
         if missing:
             print("Error: credentials.env is missing:")
             for m in missing:
@@ -231,7 +304,10 @@ def main():
             sys.exit(1)
         ensure_confluent_login(creds)
         workshop = is_workshop_mode(creds)
-        print(f"✓ Credentials loaded. Region: {DEFAULT_REGION}. Mode: {'workshop' if workshop else 'demo'}\n")
+        print(
+            f"✓ Credentials loaded. Region: {DEFAULT_REGION}. Mode: {'workshop' if workshop else 'demo'}. "
+            f"LLM: {LLM_PROVIDERS[llm_provider]}\n"
+        )
         _deploy(root, creds)
         if args.automated:
             from scripts.mcp_setup import main as setup_mcp
@@ -288,50 +364,20 @@ def main():
     _save_env_safe(creds_file, "TF_VAR_confluent_cloud_api_key", api_key)
     _save_env_safe(creds_file, "TF_VAR_confluent_cloud_api_secret", api_secret)
 
-    # AWS credentials power the Flink Bedrock connection the agent runs on. Try the
-    # ambient AWS credential chain first (SSO login, env vars, a profile).
-    print("\nAWS credentials power the Bedrock connection the fraud agent runs on (Claude in us-east-1).")
-    access_key = secret_key = token = ""
-    saved_key = creds.get("TF_VAR_aws_bedrock_access_key", "")
-    ambient = None if saved_key else _detect_ambient_aws_credentials()
-    if ambient:
-        detected_key, detected_secret, detected_token = ambient
-        masked = f"{detected_key[:4]}...{detected_key[-4:]}" if len(detected_key) > 8 else detected_key
-        if input(f"Detected AWS credentials in your environment ({masked}). Use these? (Y/n): ").strip().lower() in (
-            "",
-            "y",
-        ):
-            access_key, secret_key, token = detected_key, detected_secret, detected_token
-            if token:
-                print(
-                    "  Note: these are temporary credentials. The Bedrock connection stops working when they"
-                    "\n  expire; use a long-lived IAM user key (`uv run api-keys create`) for a lasting demo."
-                )
-
-    if not access_key:
-        access_key = prompt_with_default("AWS Access Key", saved_key)
-        secret_key = prompt_with_default("AWS Secret Key", creds.get("TF_VAR_aws_bedrock_secret_key", ""), secret=True)
-        if access_key.startswith("ASIA"):
-            print(
-                "Temporary credentials need a session token too — that's a long string"
-                "\n(300-400 chars) that can freeze some terminals on paste. If it does,"
-                "\nCtrl-C and re-run after `export AWS_SESSION_TOKEN=...` (and"
-                "\nAWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY) in your shell, so this can"
-                "\nauto-detect it instead of needing it pasted here."
-            )
-            token = prompt_with_default(
-                "AWS Session Token (temp creds)", creds.get("TF_VAR_aws_session_token", ""), secret=True
-            )
-
-    _save_env_safe(creds_file, "TF_VAR_aws_bedrock_access_key", access_key)
-    _save_env_safe(creds_file, "TF_VAR_aws_bedrock_secret_key", secret_key)
-    _save_env_safe(creds_file, "TF_VAR_aws_session_token", token)
+    llm_provider = _resolve_llm_provider(root, creds, args.bedrock)
+    if llm_provider == "bedrock":
+        _prompt_aws_credentials(creds_file, creds)
+    else:
+        print(f"\nLLM: {LLM_PROVIDERS[llm_provider]} — no AWS keys needed.")
+        print("  (Re-run with --bedrock to back the agent with your own AWS Bedrock keys instead.)")
+    _save_env_safe(creds_file, LLM_PROVIDER_KEY, llm_provider)
     if args.workshop:
         _save_env_safe(creds_file, "TF_VAR_deploy_flink_pipeline", "false")
     _flush_pending_writes(creds_file)
 
     final_creds = dotenv_values(creds_file)
-    _check_bedrock(final_creds)
+    if llm_provider == "bedrock":
+        _check_bedrock(final_creds)
     workshop = is_workshop_mode(final_creds)
 
     print("\n--- Configuration Summary ---")
@@ -339,6 +385,7 @@ def main():
         if value:
             print(f"{key}: {display_value(key, value)}")
     print(f"\nRegion: {DEFAULT_REGION}")
+    print(f"LLM: {LLM_PROVIDERS[llm_provider]}")
     if workshop:
         print(
             "Mode: WORKSHOP — infra, tables, and functions only; you build the AI pipeline by hand"

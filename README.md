@@ -6,7 +6,7 @@
   <img src="images/fraud-detection-dashboard.png" alt="Fraud Detection Dashboard" style="width:100%;max-width:900px;">
 </div>
 
-Build a real-time fraud detection system with [Confluent Cloud Streaming Agents](https://docs.confluent.io/cloud/current/ai/streaming-agents/overview.html). Streaming user activity is windowed with **Confluent Cloud for Apache Flink** and analyzed by a **Streaming Agent** (Confluent Intelligence) backed by **AWS Bedrock (Claude)**, which reasons over each user's behavior, calls tools, and emits fraud alerts in real time. A local Python producer generates synthetic events and a local Streamlit dashboard visualizes the results.
+Build a real-time fraud detection system with [Confluent Cloud Streaming Agents](https://docs.confluent.io/cloud/current/ai/streaming-agents/overview.html). Streaming user activity is windowed with **Confluent Cloud for Apache Flink** and analyzed by a **Streaming Agent** (Confluent Intelligence) backed by **Claude** (CSP Hosted by Confluent by default, or your own AWS Bedrock with `--bedrock`), which reasons over each user's behavior, calls tools, and emits fraud alerts in real time. A local Python producer generates synthetic events and a local Streamlit dashboard visualizes the results.
 
 Everything except the producer and dashboard runs in Confluent Cloud — there is no local Kafka or Flink.
 
@@ -25,7 +25,7 @@ Everything except the producer and dashboard runs in Confluent Cloud — there i
 </tr>
 <tr>
 <td><strong>3 · Reason &amp; act</strong></td>
-<td><code>AI_RUN_AGENT</code> runs a <code>CREATE AGENT</code> Streaming Agent (Bedrock Claude) over each profile. It scores the activity and calls function tools — <code>flag_transaction</code>, <code>freeze_account</code>, <code>notify_user</code> — during its reasoning.</td>
+<td><code>AI_RUN_AGENT</code> runs a <code>CREATE AGENT</code> Streaming Agent (Claude) over each profile. It scores the activity and calls function tools — <code>flag_transaction</code>, <code>freeze_account</code>, <code>notify_user</code> — during its reasoning.</td>
 </tr>
 <tr>
 <td><strong>4 · Alert</strong></td>
@@ -41,8 +41,8 @@ Everything except the producer and dashboard runs in Confluent Cloud — there i
 
 - **A Confluent Cloud account** + a **Cloud resource management** API key & secret ([create one](https://docs.confluent.io/cloud/current/security/authenticate/workload-identities/service-accounts/api-keys/manage-api-keys.html)).
   [![Sign up for Confluent Cloud](https://img.shields.io/badge/Sign%20up%20for%20Confluent%20Cloud-007BFF?style=for-the-badge&logo=apachekafka&logoColor=white)](https://www.confluent.io/confluent-cloud/tryfree/?utm_campaign=tm.plg_cd.techxchange2026&utm_source=lab&utm_medium=github)
-- **An AWS account with Amazon Bedrock access** — an IAM user with a long-lived access key & secret and the `bedrock:InvokeModel` permission.
-- **Claude model access enabled in Amazon Bedrock** (region **`us-east-1`**). Bedrock does **not** enable third-party models by default — you must request/enable access to Anthropic Claude on the **Model access** page once. See [Add or remove access to Amazon Bedrock foundation models](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html). Without this, deploy succeeds but no alerts are produced (Bedrock returns AccessDenied).
+- **No AWS account by default.** The agent runs on Claude through Confluent's **CSP Hosted model inference** (`'provider' = 'confluent'`), so there are no model keys to manage.
+- *Only with `uv run deploy --bedrock`* (your own Bedrock keys instead): **an AWS account with Amazon Bedrock access** — an IAM user with a long-lived access key & secret and the `bedrock:InvokeModel` permission — and **Claude model access enabled in Amazon Bedrock** (region **`us-east-1`**). Bedrock does **not** enable third-party models by default — request/enable Anthropic Claude on the **Model access** page once. See [Add or remove access to Amazon Bedrock foundation models](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html). Without this, deploy succeeds but no alerts are produced (Bedrock returns AccessDenied).
 
 **Required tools:**
 
@@ -99,9 +99,9 @@ demo-confluent-fraud-agent/
 ├── WALKTHROUGH.md                   # Guided post-deploy Stream Lineage tour
 ├── terraform/                       # Confluent Cloud provisioning (start here)
 │   ├── main.tf                      # Env, cluster, SR, compute pool, service account, keys, ACLs
-│   ├── flink.tf                     # Bedrock connection, tools artifact, and all Flink statements
+│   ├── flink.tf                     # LLM provider switch, tools artifact, and all Flink statements
 │   ├── connect.tf                   # Writes .env for the local apps
-│   ├── variables.tf                 # The 4 required inputs (+ deploy_flink_pipeline flag)
+│   ├── variables.tf                 # Confluent key/secret, llm_provider (+ Bedrock keys), deploy_flink_pipeline
 │   └── modules/flink-statement/     # Reusable confluent_flink_statement wrapper
 ├── tools-udf/                       # Java UDF tools (flag/freeze/notify) + pre-built JAR
 ├── producer/generate_events.py      # Synthetic event generator
@@ -118,7 +118,7 @@ The agent calls three function-based tools — `flag_transaction`, `freeze_accou
 
 **Dashboard shows no fraud alerts?** The input topics and `activity_profiles` fill but `fraud_alerts` stays empty — check, in order:
 
-1. **Bedrock model access.** If Claude isn't enabled in **Amazon Bedrock → Model access (us-east-1)**, every `AI_RUN_AGENT` call fails with AccessDenied and no alerts are produced. Enable it (see Prerequisites).
+1. **Model access.** With the default CSP Hosted model, check the `create-model-fraud-…` statement is `COMPLETED`. With `--bedrock`, if Claude isn't enabled in **Amazon Bedrock → Model access (us-east-1)**, every `AI_RUN_AGENT` call fails with AccessDenied and no alerts are produced. Enable it (see Prerequisites).
 2. **Is the `detect-fraud` statement RUNNING?** In the [Flink workspace](https://confluent.cloud/go/flink), check the `detect-fraud-…` statement isn't `FAILED`. The agent is configured with `handle_exception = 'continue'` and `max_consecutive_failures = '5'` so a stray malformed model response doesn't kill it — if it still fails, inspect the statement's error detail.
 3. **Give it ~1–2 minutes** with the producer running. The dashboard reads from `latest`; alerts arrive in window-firing batches and high-risk ones are ~1 per cycle.
 
@@ -132,13 +132,13 @@ SELECT * FROM fraud_alerts WHERE risk_score >= 70;   -- the high-risk verdicts
 
 | Command | What it does |
 |---------|--------------|
-| `uv run deploy` | Prompts for credentials (saved to the gitignored `credentials.env`), then deploys. `--workshop` skips the hands-on AI pipeline statements. |
+| `uv run deploy` | Prompts for credentials (saved to the gitignored `credentials.env`), then deploys. `--workshop` skips the hands-on AI pipeline statements; `--bedrock` backs the agent with your own AWS Bedrock keys instead of CSP Hosted inference. |
 | `uv run producer` | Streams synthetic events (Ctrl+C to stop). |
 | `uv run dashboard` | Opens the live dashboard at http://localhost:8501. |
 | `uv run setup-mcp` | Registers the [Confluent MCP server](https://github.com/confluentinc/mcp-confluent) with Claude Code or Codex for this deployment, so your coding agent can list topics and run Flink SQL. Needs Node.js. |
 | `uv run setup-rtce` | Enables [Real-Time Context Engine](https://docs.confluent.io/cloud/current/ai/real-time-context-engine.html) on the demo topics and registers its MCP server with your coding agent. Not used by the demo yet. |
-| `uv run test-bedrock` | Checks the AWS key in `credentials.env` can invoke Claude on Bedrock. |
-| `uv run api-keys create` / `destroy` | Workshop organizers: mint (or revoke) a Bedrock-only AWS IAM key. |
+| `uv run test-bedrock` | `--bedrock` only: checks the AWS key in `credentials.env` can invoke Claude on Bedrock. |
+| `uv run api-keys create` / `destroy` | Workshop organizers using `--bedrock`: mint (or revoke) a Bedrock-only AWS IAM key. |
 | `uv run destroy` | Tears everything down. |
 
 ## Cleanup

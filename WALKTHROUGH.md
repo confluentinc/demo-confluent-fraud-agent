@@ -2,7 +2,7 @@
 
 A ~15-minute guided walkthrough to run **after deployment**. It follows the data left-to-right through **Stream Lineage** — from the source topics, into the Flink Streaming Agent, out to the alerts topic — and finishes on the live Streamlit dashboard.
 
-**The story in one line:** synthetic user activity streams into Confluent Cloud, a Flink **Streaming Agent** (Bedrock Claude) reasons over each user's behavior and calls tools to act, and fraud alerts surface in real time — all without leaving Confluent Cloud.
+**The story in one line:** synthetic user activity streams into Confluent Cloud, a Flink **Streaming Agent** (Claude) reasons over each user's behavior and calls tools to act, and fraud alerts surface in real time — all without leaving Confluent Cloud.
 
 ---
 
@@ -66,9 +66,9 @@ Each row is one user's session window (`window_start`, `window_end`) with the ex
 > [!NOTE]
 > Steps 9–11 stay in the **Flink** UI — the model, tools, and agent are Flink *objects*, not data flows, so they don't appear in Stream Lineage. View each from **[Flink → Statements](https://confluent.cloud/go/flink)** (the completed `create-model-…`, `create-tool-…`, and `create-agent-…` statements — click to see the SQL), or run `SHOW MODELS;` / `SHOW TOOLS;` / `SHOW AGENTS;` in the workspace. You return to Stream Lineage in Section 3.
 
-**9. Show `CREATE MODEL` (Bedrock Claude).** The agent's brain is a remote LLM registered as a Flink model — Anthropic Claude on AWS Bedrock. Confluent Cloud calls it inline as part of the stream; no separate serving infrastructure.
+**9. Show `CREATE MODEL` (Claude).** The agent's brain is an LLM registered as a Flink model — Anthropic Claude, CSP Hosted by Confluent (`'provider' = 'confluent'`: no connection, no API keys), or on your own AWS Bedrock account with `--bedrock`. Confluent Cloud calls it inline as part of the stream; no separate serving infrastructure.
 
-![CREATE MODEL — Bedrock Claude](images/demo/09-create-model.png)
+![CREATE MODEL — Claude](images/demo/09-create-model.png)
 
 **10. Show the tools (`CREATE FUNCTION` + `CREATE TOOL`).** Three tools the agent can call — `flag_transaction`, `freeze_account`, `notify_user` — implemented as Flink UDFs (uploaded as a JAR artifact). These represent the real actions a fraud system would take. The agent decides *which* to call and *when*. Below is the `freeze_account` tool:
 
@@ -144,7 +144,7 @@ In ~15 minutes you've walked a complete, real-time fraud-detection pipeline runn
 
 - **Raw events** stream in from three topics — transactions, logins, account changes.
 - A Flink **`SESSION` window** groups each user's burst of activity into one profile.
-- A **Streaming Agent** (Bedrock Claude) reasons over each profile and **calls tools** to act on it.
+- A **Streaming Agent** (Claude) reasons over each profile and **calls tools** to act on it.
 - Structured **fraud alerts** surface in real time on the dashboard — with the agent's reasoning *and* the action it took.
 
 No model-serving stack, no orchestration, no glue services — just declarative SQL and an agent, **event-driven and always on**: new behavior arrives, the agent reacts.
