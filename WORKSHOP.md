@@ -137,8 +137,7 @@ pipeline. It also writes a ready-to-use `.env` for the producer and dashboard.
 
 Before building the pipeline, get data flowing so you can watch each stage light up as you
 create it. The **producer** stands in for your customers, streaming synthetic transactions,
-logins, and account changes into your topics. It reads the `.env` Terraform already wrote (no
-config needed).
+logins, and account changes into your topics.
 
 **1. Start the producer.** Open a new terminal, `cd` into the repo root directory, and run
 (`uv` installs the Python dependencies on first run):
@@ -152,19 +151,19 @@ uv run producer
 
 **2. Open the Flink workspace.**
 
-1. Navigate to the [Flink UI](https://confluent.cloud/go/flink) and select the **environment**
-   Terraform created (`fraud-agent-env-…`).
+Navigate to the [Flink UI](https://confluent.cloud/go/flink) and select the **environment**
+Terraform created (`fraud-agent-env-…`).
 
-   <img src="images/workshop/3_step3_1.png" alt="Select the fraud-agent environment" width="600">
+<img src="images/workshop/3_step3_1.png" alt="Select the fraud-agent environment" width="600">
 
-2. Open a **SQL workspace**.
+Open a **SQL workspace**.
 
-   <img src="images/workshop/3_step3_2.png" alt="Compute pool — open SQL Workspace" width="600">
+<img src="images/workshop/3_step3_2.png" alt="Compute pool — open SQL Workspace" width="600">
 
-3. Set the **Catalog** to your `flink_catalog` output and the **Database** to your
-   `flink_database` output.
+Set the **Catalog** to your `flink_catalog` output and the **Database** to your
+`flink_database` output.
 
-   <img src="images/workshop/3_step3_3.png" alt="Set the workspace catalog and database" width="700">
+<img src="images/workshop/3_step3_3.png" alt="Set the workspace catalog and database" width="700">
 
 **3. Confirm events are flowing** — query the three input topics:
 
@@ -199,8 +198,8 @@ stays **RUNNING**).
 
 This unions the three input streams and collects each user's activity into a 3-second
 event-time SESSION window — one profile per activity burst. It is materialized as its own
-`activity_profiles` table so you can query it and see it in Stream Lineage. Run the whole block
-below together:
+`activity_profiles` table so you can query it and see it in Stream Lineage. In the Flink
+workspace, add a **new cell**, paste the whole block below, and run it:
 
 ```sql
 SET 'client.statement-name' = 'create-activity-profiles';
