@@ -15,11 +15,20 @@ git clone https://github.com/confluentinc/demo-confluent-fraud-agent.git && cd d
 
 ## 2. Deploy everything
 
+**Signed up to Confluent Cloud with SSO?** Sign in to the Confluent CLI first (skip this if you
+signed up with an email and password):
+
+```bash
+confluent login --no-browser
+```
+
+Then deploy:
+
 ```bash
 uv run deploy
 ```
 
-The first run asks for your Confluent Cloud login and a Cloud API key (it can generate one for
+The first run asks for your Confluent Cloud login (**SSO?** press Enter at that prompt after the CLI login above) and a Cloud API key (it can generate one for
 you). The agent's Claude model is CSP Hosted by Confluent, so no AWS key is needed; run
 `uv run deploy --bedrock` instead to use your own AWS Bedrock key (it detects credentials
 already in your shell). It saves them to `credentials.env` (gitignored), so later runs only ask you to confirm.
