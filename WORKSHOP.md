@@ -27,10 +27,7 @@ These are **not** part of the timed hour. Complete them before the workshop:
 - [ ] **Confluent Cloud account and a payment method (or promo code)** — the two steps in
       [Set up Confluent Cloud](#1-set-up-confluent-cloud) below. (`uv run deploy` creates the
       Cloud API key for you.)
-- [ ] **No AWS account needed** — the agent's Claude model is CSP Hosted by Confluent. *Only*
-      if you deploy with `--bedrock` (your own Bedrock keys instead) do you need an AWS IAM user
-      with a long-lived access key & secret, the `bedrock:InvokeModel` permission, and Anthropic
-      Claude enabled on Bedrock's **Model access** page in **`us-east-1`**.
+- [ ] **No AWS account needed** — the agent's Claude model is CSP Hosted by Confluent.
 - [ ] **Tools installed:** [Terraform](https://github.com/hashicorp/terraform),
       [Git](https://git-scm.com/), [Python 3.11+](https://www.python.org/downloads/).
 
@@ -118,14 +115,13 @@ credit is used first, so you typically won't be charged during the workshop.
    | Confluent Cloud email / password | Your Confluent Cloud login: the **email and password you used to sign up** (**single sign-on?** Press Enter at this prompt after the CLI login in step 3. If you skipped it, `deploy` offers to run the SSO login for you) |
    | Generate new Confluent Cloud API keys? | Answer `y` — `uv` creates the API key and secret for you |
    | Confluent Cloud API Key / Secret | Press **Enter** to confirm the key and secret `uv` just created |
-   | AWS Access Key / Secret Key | **Only with `--bedrock`** — your AWS IAM user's access key with Bedrock access (or the one your instructor gave you). The default needs no AWS keys |
 
    Answer `y` at **Ready to deploy?**.
 
    <img src="images/workshop/2_deploy_1.png" alt="uv run deploy — Configuration Summary and Ready to deploy? prompt" width="600">
 
 This provisions the environment, Kafka cluster, Schema Registry, Flink compute pool, the
-tools JAR artifact, and the **4 tables** (plus a Bedrock connection with `--bedrock`) — but **not** the AI
+tools JAR artifact, and the **4 tables** — but **not** the AI
 pipeline. It also writes a ready-to-use `.env` for the producer and dashboard.
 
 > [!NOTE]
