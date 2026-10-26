@@ -95,6 +95,25 @@ def deployed_llm_provider(root: Path) -> str | None:
     return "bedrock" if "bedrock" in live else "confluent"
 
 
+# The terraform/flink.tf modules gated on deploy_flink_pipeline (demo mode only).
+DEMO_PIPELINE_MODULES = ("model", "tool_flag", "tool_freeze", "tool_notify", "agent", "profiles", "detect")
+
+
+def deployed_demo_pipeline(root: Path) -> bool:
+    """Whether Terraform state holds the demo-mode AI pipeline statements.
+
+    Destroying those statements (by switching to workshop mode) does not drop the
+    model, tools, agent, or activity_profiles they created, so the attendee's own
+    CREATE statements would then fail with "already exists".
+    """
+    try:
+        resources = json.loads((terraform_dir(root) / "terraform.tfstate").read_text()).get("resources", [])
+    except (OSError, ValueError):
+        return False
+    demo = {f"module.{name}[0]" for name in DEMO_PIPELINE_MODULES}
+    return any(r.get("module", "").split(".module.")[0] in demo and r.get("instances") for r in resources)
+
+
 def llm_provider_for(root: Path, creds: dict[str, str], requested: str | None = None) -> str:
     """The provider to deploy: requested (--bedrock / an exported TF_VAR_llm_provider),
     else what is deployed now, else credentials.env.

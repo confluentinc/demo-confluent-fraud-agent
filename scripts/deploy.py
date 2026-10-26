@@ -41,6 +41,7 @@ from scripts.terraform_runner import run_terraform
 from scripts.tfvars import (
     LLM_PROVIDER_KEY,
     LLM_PROVIDERS,
+    deployed_demo_pipeline,
     is_workshop_mode,
     llm_provider_for,
     write_tfvars_for_deployment,
@@ -124,6 +125,16 @@ def _flush_pending_writes(creds_file) -> None:
 
 
 def _deploy(root, creds: dict) -> None:
+    if is_workshop_mode(creds) and deployed_demo_pipeline(root):
+        print(
+            "\n✗ This deployment already runs the demo AI pipeline (fraud_model, tools, agent)."
+            "\n  Workshop mode would leave those in the Flink catalog, so your own CREATE MODEL"
+            "\n  in WORKSHOP.md would fail with \"already exists\". Start clean instead:"
+            "\n    uv run destroy"
+            "\n    uv run deploy --workshop"
+            "\n  (To keep the demo, set TF_VAR_deploy_flink_pipeline=true in credentials.env.)"
+        )
+        sys.exit(1)
     print("\n=== Starting Deployment ===")
     if not write_tfvars_for_deployment(root, creds):
         print("Error: could not write terraform/terraform.tfvars (missing credentials?).")

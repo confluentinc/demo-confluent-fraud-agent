@@ -9,6 +9,8 @@ import pytest
 from scripts import setup_rtce
 from scripts.mcp_setup import _TF_TO_MCP, _build_env_vars
 from scripts.tfvars import (
+    DEMO_PIPELINE_MODULES,
+    deployed_demo_pipeline,
     deployed_llm_provider,
     generate_tfvars_content,
     is_workshop_mode,
@@ -87,6 +89,27 @@ def test_deployed_llm_provider_reads_state(tmp_path):
     assert deployed_llm_provider(tmp_path) == "bedrock"
     _write_state(tmp_path, "main", "this")
     assert deployed_llm_provider(tmp_path) == "confluent"
+
+
+def test_deployed_demo_pipeline_reads_state(tmp_path):
+    assert not deployed_demo_pipeline(tmp_path)
+    tf = tmp_path / "terraform"
+
+    def write(*modules: str) -> None:
+        resources = [{"module": m, "name": "this", "instances": [{}]} for m in modules]
+        (tf / "terraform.tfstate").write_text(json.dumps({"resources": resources}))
+
+    tf.mkdir()
+    write("module.tbl_fraud_alerts", "module.fn_flag")  # workshop mode
+    assert not deployed_demo_pipeline(tmp_path)
+    write("module.tbl_fraud_alerts", "module.model[0]")  # demo mode
+    assert deployed_demo_pipeline(tmp_path)
+
+
+def test_demo_pipeline_modules_match_terraform():
+    text = (ROOT / "terraform" / "flink.tf").read_text()
+    gated = re.findall(r'^module "(\w+)" \{\n[^\n]*\n\s*count\s*=\s*var\.deploy_flink_pipeline', text, re.M)
+    assert set(gated) == set(DEMO_PIPELINE_MODULES)
 
 
 def test_llm_provider_for_prefers_request_then_state_then_saved(tmp_path):

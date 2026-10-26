@@ -127,6 +127,12 @@ pipeline. It also writes a ready-to-use `.env` for the producer and dashboard.
 > [!NOTE]
 > Grab a coffee ☕ — it takes **5–7 minutes** to deploy.
 
+> [!WARNING]
+> Ran `uv run deploy` without `--workshop` first? That builds the whole AI pipeline for you, and
+> its model, tools, and agent stay in your Flink catalog, so your `CREATE` statements below would
+> fail with "already exists". `uv run deploy --workshop` stops and tells you to start clean:
+> run `uv run destroy`, then `uv run deploy --workshop`.
+
 ## 3. Start the event stream — generate live activity
 
 Before building the pipeline, get data flowing so you can watch each stage light up as you

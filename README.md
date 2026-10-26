@@ -128,6 +128,10 @@ SELECT * FROM activity_profiles;            -- should fill (windowing works)
 SELECT * FROM fraud_alerts WHERE risk_score >= 70;   -- the high-risk verdicts
 ```
 
+**`CREATE MODEL` (or a tool/agent) fails with "already exists" in the workshop?** You deployed in
+demo mode first: that created the pipeline objects, and they stay in the Flink catalog after the
+statements are removed. Run `uv run destroy`, then `uv run deploy --workshop`.
+
 ## Utility commands
 
 | Command | What it does |
