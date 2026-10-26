@@ -149,7 +149,7 @@ uv run producer
 > [!NOTE]
 > Leave this running for the whole workshop and open a new terminal tab for anything else.
 
-**2. Open the Flink workspace.**
+**2. Open the Flink workspace in Confluent Cloud.**
 
 Navigate to the [Flink UI](https://confluent.cloud/go/flink) and select the **environment**
 Terraform created (`fraud-agent-env-…`).
@@ -160,12 +160,12 @@ Open a **SQL workspace**.
 
 <img src="images/workshop/3_step3_2.png" alt="Compute pool — open SQL Workspace" width="600">
 
-Set the **Catalog** to your `flink_catalog` output and the **Database** to your
-`flink_database` output.
+**3. Set the Catalog and Database.** Set the **Catalog** to your `flink_catalog` output and the
+**Database** to your `flink_database` output.
 
 <img src="images/workshop/3_step3_3.png" alt="Set the workspace catalog and database" width="700">
 
-**3. Confirm events are flowing** — query the three input topics:
+**4. Confirm events are flowing** — query the three input topics:
 
 ```sql
 SELECT * FROM transactions LIMIT 5;
