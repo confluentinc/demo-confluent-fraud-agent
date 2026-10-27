@@ -153,8 +153,8 @@ Open a **SQL workspace**.
 
 <img src="images/workshop/3_step3_2.png" alt="Compute pool — open SQL Workspace" width="600">
 
-**3. Set the Catalog and Database.** Set the **Catalog** to your `flink_catalog` output and the
-**Database** to your `flink_database` output.
+**3. Set the Catalog and Database.** Set the **Catalog** and **Database** to the **Flink catalog** and **Flink database** values
+printed at the end of `uv run deploy` (the environment and cluster names, e.g. `fraud-agent-env-?`).
 
 <img src="images/workshop/3_step3_3.png" alt="Set the workspace catalog and database" width="700">
 
