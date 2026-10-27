@@ -225,7 +225,32 @@ SELECT * FROM activity_profiles;
 
 <img src="images/workshop/4_step4_1.png" alt="activity_profiles query results" width="700">
 
-## 5. Define the actions — give the agent hands
+## 5. Connect the model — give the agent a brain
+
+Fraud rarely fits fixed if/else rules — catching it takes judgment. So the next thing you do
+is give the pipeline access to a large language model. This statement registers that model as
+`fraud_model` so Flink SQL can call it like any other function.
+
+Run the statement below to create the model in your Flink catalog. `'provider' = 'confluent'`
+is CSP Hosted model inference: Confluent invokes Claude for you, so there's no connection or
+API key to manage.
+
+```sql
+CREATE MODEL `fraud_model`
+INPUT (`prompt` STRING)
+OUTPUT (`response` STRING)
+WITH (
+  'provider' = 'confluent',
+  'task' = 'text_generation',
+  'confluent.model' = 'anthropic.claude-sonnet-4-6',
+  'confluent.params.max_tokens' = '8192'
+);
+```
+
+On its own the model just "thinks" — you'll give it actions and a job in the next sections.
+
+
+## 6. Define the actions — give the agent hands
 
 A fraud analyst that can only *think* isn't useful; it has to *act* — flag a suspicious
 transaction, freeze a compromised account, or warn the customer. That takes two layers: a
@@ -281,7 +306,7 @@ SHOW USER FUNCTIONS;
 </details>
 
 
-## 6. Assemble the fraud analyst — create the agent
+## 7. Assemble the fraud analyst — create the agent
 
 <img src="images/workshop/7_step7_arch.png" alt="Pipeline — Fraud Streaming Agent producing fraud_alerts" width="800">
 
@@ -293,8 +318,8 @@ single strict-JSON verdict you can store — it *is* the fraud policy.
 ### 🎯 Challenge: Give the agent its model
 
 Build the agent **either** way below — the result is the same. Your challenge in both: point it
-at the Claude model that Confluent hosts for you — there's nothing to create first, it's
-available as soon as you create the agent.
+at the model you created in section 5 (need the name? run `SHOW MODELS;` and pick the one you
+created, not a `system.*` model).
 
 **Option A — Streaming Agents UI**
 
@@ -304,10 +329,7 @@ available as soon as you create the agent.
    <img src="images/workshop/7_step7_1.png" alt="Left panel — Agents → Create an agent" width="450">
 
 2. **Agent name** — `fraud_detection_agent`.
-3. 🎯 **Model** — pick `system.anthropic.claude-sonnet-4-6` from the dropdown.
-
-   <img src="images/workshop/7_step7_model.png" alt="Create Streaming Agent — Model dropdown" width="500">
-
+3. 🎯 **Model** — pick the model you created from the dropdown (not a `system.*` model).
 4. **Instructions** — paste this fraud-policy prompt:
 
   ```text
@@ -372,9 +394,11 @@ available as soon as you create the agent.
 <details>
 <summary><strong>Option B</strong> — create the agent with a <code>CREATE AGENT</code> statement</summary>
 
+Fill in the `<model-name>` the agent runs on.
+
 ```sql
 CREATE AGENT `fraud_detection_agent`
-USING MODEL `system.anthropic.claude-sonnet-4-6`
+USING MODEL `<model-name>`
 USING PROMPT 'You are a real-time fraud detection analyst.
 
 You receive a plain-text activity profile for ONE user over a short time window. It lists
@@ -424,7 +448,7 @@ The agent is now **created but not running** — nothing calls it yet. In the ne
 to work.
 
 
-## 7. Detect fraud in real time — put the analyst to work
+## 8. Detect fraud in real time — put the analyst to work
 
 This is the payoff. For **every** activity profile that appears, this statement calls the agent,
 lets it score and act, and writes the verdict — risk score, reasoning, actions taken, and
@@ -462,7 +486,7 @@ WHERE `json_text` IS NOT NULL;
 <details>
 <summary>Hint — how do I find the agent name?</summary>
 
-You created the agent in section 6. List your agents with:
+You created the agent in section 7. List your agents with:
 
 ```sql
 SHOW AGENTS;
@@ -481,7 +505,7 @@ SELECT * FROM fraud_alerts WHERE risk_score >= 70;
 
 <img src="images/workshop/8_step8_1.png" alt="fraud_alerts high-risk query results" width="700">
 
-## 8. Watch the alerts — start the dashboard
+## 9. Watch the alerts — start the dashboard
 
 With the producer still running, open a new terminal tab in the repo root and start the
 dashboard:
@@ -502,7 +526,7 @@ You just built a real-time, AI-powered fraud detection pipeline — no batch job
 rules engine. Raw events stream in, Flink windows them per user, and a Claude-powered Streaming
 Agent scores every burst and acts in seconds. Not bad for an hour's work.
 
-## 9. Cleanup
+## 10. Cleanup
 
 Stop the producer by running **Ctrl+C** in its terminal. Then tear it all down (so the credits
 last):

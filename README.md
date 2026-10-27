@@ -85,7 +85,7 @@ This repo can be run two ways. Both start from the same [Prerequisites](#prerequ
 | Path | What you do | Time | Guide |
 |------|-------------|------|-------|
 | **🎬 Demo** | One `uv run deploy` deploys **everything** — infra *and* the full Flink AI pipeline. You just run the producer and dashboard. | ~15 min | **[DEMO.md](DEMO.md)** |
-| **🛠️ Self-service workshop** | `uv run deploy --workshop` deploys infra + the 4 tables; **you build the AI pipeline by hand** in the Flink UI (producer + input topics → windowing → tools → agent → detection → dashboard). | ~1 hour | **[WORKSHOP.md](WORKSHOP.md)** |
+| **🛠️ Self-service workshop** | `uv run deploy --workshop` deploys infra + the 4 tables; **you build the AI pipeline by hand** in the Flink UI (producer + input topics → windowing → model → tools → agent → detection → dashboard). | ~1 hour | **[WORKSHOP.md](WORKSHOP.md)** |
 
 **New here or short on time?** Take the [Demo path](DEMO.md). **Want to learn how Streaming
 Agents are built, statement by statement?** Take the [Workshop path](WORKSHOP.md).
@@ -128,7 +128,7 @@ SELECT * FROM activity_profiles;            -- should fill (windowing works)
 SELECT * FROM fraud_alerts WHERE risk_score >= 70;   -- the high-risk verdicts
 ```
 
-**A workshop `CREATE` (`activity_profiles`, a tool, or the agent) fails with "already exists"?**
+**A workshop `CREATE` (`activity_profiles`, the model, a tool, or the agent) fails with "already exists"?**
 You deployed in demo mode first: that created the pipeline objects, and they stay in the Flink
 catalog after the statements are removed. Re-run `uv run deploy --workshop` and answer `y` when it
 offers to destroy and redeploy (or run `uv run destroy`, then `uv run deploy --workshop`).

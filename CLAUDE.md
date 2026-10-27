@@ -113,8 +113,8 @@ cd tools-udf && ./build.sh    # then commit target/fraud-tools.jar
   update the matching block in `WORKSHOP.md`. Note: only `flag_transaction_tool` is shown in
   full; `freeze_account_tool` / `notify_user_tool` are a "your turn" challenge shown with the
   `USING FUNCTION` name replaced by a `<function-name>` placeholder (a `<details>` hint points
-  participants at `SHOW USER FUNCTIONS`). The workshop has no `CREATE MODEL` step: the agent's `USING MODEL`
-  is the built-in `system.anthropic.claude-sonnet-4-6`. The detect `INSERT`'s `AI_RUN_AGENT(...)` uses
+  participants at `SHOW USER FUNCTIONS`). Likewise the agent's `USING MODEL` is a `<model-name>`
+  placeholder challenge (hint: `SHOW MODELS`), and the detect `INSERT`'s `AI_RUN_AGENT(...)` uses
   an `<agent-name>` placeholder challenge (hint: `SHOW AGENTS`). Section 6's "Give the agent its
   model" challenge offers two options: **Option A** — the guided Streaming Agents UI (steps + the
   fraud-policy prompt shown as a plain-text block for the Instructions field); **Option B** — the
