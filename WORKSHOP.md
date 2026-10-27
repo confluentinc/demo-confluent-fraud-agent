@@ -304,7 +304,10 @@ available as soon as you create the agent.
    <img src="images/workshop/7_step7_1.png" alt="Left panel — Agents → Create an agent" width="450">
 
 2. **Agent name** — `fraud_detection_agent`.
-3. 🎯 **Model** — pick `system.anthropic.claude-opus-4-8` from the dropdown.
+3. 🎯 **Model** — pick `system.anthropic.claude-sonnet-4-6` from the dropdown.
+
+   <img src="images/workshop/7_step7_model.png" alt="Create Streaming Agent — Model dropdown" width="500">
+
 4. **Instructions** — paste this fraud-policy prompt:
 
   ```text
@@ -371,7 +374,7 @@ available as soon as you create the agent.
 
 ```sql
 CREATE AGENT `fraud_detection_agent`
-USING MODEL `system.anthropic.claude-opus-4-8`
+USING MODEL `system.anthropic.claude-sonnet-4-6`
 USING PROMPT 'You are a real-time fraud detection analyst.
 
 You receive a plain-text activity profile for ONE user over a short time window. It lists
