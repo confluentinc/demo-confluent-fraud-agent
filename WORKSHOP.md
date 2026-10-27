@@ -24,7 +24,7 @@ to a `fraud_alerts` stream.
 
 These are **not** part of the timed hour. Complete them before the workshop:
 
-- [ ] **Confluent Cloud account and a payment method (or promo code)** — the two steps in
+- [ ] **Confluent Cloud account and a payment method** — the two steps in
       [Set up Confluent Cloud](#1-set-up-confluent-cloud) below. (`uv run deploy` creates the
       Cloud API key for you.)
 - [ ] **No AWS account needed** — the agent's Claude model is CSP Hosted by Confluent.
@@ -48,9 +48,9 @@ These are **not** part of the timed hour. Complete them before the workshop:
 > creates its own environment *and* cluster for you. Click the Confluent logo (top-left) to
 > exit the wizard.
 
-#### Step 2 — Add a payment method (credit card or promo code)
+#### Step 2 — Add a payment method (credit card)
 
-A payment method or promo code is required for Terraform to create a **Standard** cluster. Free
+A payment method is required for Terraform to create a **Standard** cluster. Free
 credit is used first, so you typically won't be charged during the workshop.
 
 > [!TIP]
@@ -59,49 +59,26 @@ credit is used first, so you typically won't be charged during the workshop.
 
 1. Go directly to **[Billing & payment](https://confluent.cloud/settings/billing/payment)**.
 2. Open the **Payment details and contacts** tab.
-3. Choose **one** of the two options:
+3. Click **Add credit card / bank account**, enter your **card details**, then **Save**.
 
-   - **Option A — Credit card:** click **Add credit card / bank account**, enter your **card
-     details**, then **Save**.
-
-     <img src="images/workshop/0_step2_1.png" alt="Payment details and contacts — Add credit card / bank account" width="500">
-
-   - **Option B — Promo code (provided by the workshop host):** scroll down to **Promos**, click
-     **+ Promo code**, enter the code you were given, then **Apply**. No credit card is needed.
-
-     <img src="images/workshop/0_step2_2.png" alt="Billing and payment — Promos, + Promo code" width="500">
+   <img src="images/workshop/0_step2_1.png" alt="Payment details and contacts — Add credit card / bank account" width="500">
 
 ## 2. Deploy the infrastructure (~8–10 min)
 
-1. Open a **Terminal** on your machine — click **Activities** (top-left), then the **Terminal**
-   icon in the dock.
-
-   <img src="images/workshop/2_terminal_1.png" alt="Open Terminal from the dock" width="500">
-
-2. Go to the workshop folder and pull the latest changes:
-
-   ```bash
-   cd workshop/4548/
-   git pull
-   ```
-
-   <details>
-   <summary><strong>Using your own machine?</strong> Clone the repo instead</summary>
+1. Clone the repo and go into it:
 
    ```bash
    git clone https://github.com/confluentinc/demo-confluent-fraud-agent.git
    cd demo-confluent-fraud-agent
    ```
 
-   </details>
-
-3. **Only if you signed up to Confluent Cloud with SSO:** sign in to the Confluent CLI first. Skip this if you signed up with email and password.
+2. **Only if you signed up to Confluent Cloud with SSO:** sign in to the Confluent CLI first. Skip this if you signed up with email and password.
 
    ```bash
    confluent login
    ```
 
-4. Deploy in workshop mode:
+3. Deploy in workshop mode:
 
    ```bash
    uv run deploy --workshop
@@ -111,7 +88,7 @@ credit is used first, so you typically won't be charged during the workshop.
 
    | Prompt | Where to get it |
    |---|---|
-   | Confluent Cloud email / password | Your Confluent Cloud login: the **email and password you used to sign up** (**single sign-on?** Press Enter at this prompt after the CLI login in step 3. If you skipped it, `deploy` offers to run the SSO login for you) |
+   | Confluent Cloud email / password | Your Confluent Cloud login: the **email and password you used to sign up** (**single sign-on?** Press Enter at this prompt after the CLI login in step 2. If you skipped it, `deploy` offers to run the SSO login for you) |
    | Generate new Confluent Cloud API keys? | Answer `y` — `uv` creates the API key and secret for you |
    | Confluent Cloud API Key / Secret | Press **Enter** to confirm the key and secret `uv` just created |
 
@@ -352,8 +329,7 @@ created, not a `system.*` model).
    <img src="images/workshop/7_step7_1.png" alt="Left panel — Agents → Create an agent" width="450">
 
 2. **Agent name** — `fraud_detection_agent`.
-3. 🎯 **Model** — pick the model you created from the dropdown (not a `system.*` model).
-4. **Instructions** — paste this fraud-policy prompt:
+3. **Instructions** — paste this fraud-policy prompt:
 
   ```text
   You are a real-time fraud detection analyst.
@@ -393,6 +369,8 @@ created, not a `system.*` model).
     self-corrections, no markdown, no code fences. Put all explanation inside "reasoning", nowhere else.
   {"user_id": "<copy from input>", "risk_score": <0-100 integer>, "reasoning": "<one or two sentences>", "actions_taken": ["freeze_account"|"flag_transaction"|"notify_user"], "flagged_transaction_ids": ["<copied transaction ids>"]}
   ```
+
+4. 🎯 **Model** — pick the model you created from the dropdown (not a `system.*` model).
 
    <img src="images/workshop/7_step7_2.png" alt="Create Streaming Agent — name, instructions, model" width="500">
 
