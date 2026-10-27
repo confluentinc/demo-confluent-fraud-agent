@@ -329,8 +329,7 @@ created, not a `system.*` model).
    <img src="images/workshop/7_step7_1.png" alt="Left panel — Agents → Create an agent" width="450">
 
 2. **Agent name** — `fraud_detection_agent`.
-3. 🎯 **Model** — pick the model you created from the dropdown (not a `system.*` model).
-4. **Instructions** — paste this fraud-policy prompt:
+3. **Instructions** — paste this fraud-policy prompt:
 
   ```text
   You are a real-time fraud detection analyst.
@@ -370,6 +369,8 @@ created, not a `system.*` model).
     self-corrections, no markdown, no code fences. Put all explanation inside "reasoning", nowhere else.
   {"user_id": "<copy from input>", "risk_score": <0-100 integer>, "reasoning": "<one or two sentences>", "actions_taken": ["freeze_account"|"flag_transaction"|"notify_user"], "flagged_transaction_ids": ["<copied transaction ids>"]}
   ```
+
+4. 🎯 **Model** — pick the model you created from the dropdown (not a `system.*` model).
 
    <img src="images/workshop/7_step7_2.png" alt="Create Streaming Agent — name, instructions, model" width="500">
 
