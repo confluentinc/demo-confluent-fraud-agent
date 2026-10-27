@@ -525,7 +525,8 @@ module "detect" {
       COALESCE(JSON_QUERY(`json_text`, '$.actions_taken'), '[]') AS `actions_taken`,
       COALESCE(JSON_QUERY(`json_text`, '$.flagged_transaction_ids'), '[]') AS `flagged_transaction_ids`,
       `raw_response`
-    FROM `scored`;
+    FROM `scored`
+    WHERE `json_text` IS NOT NULL;
   EOT
   depends_on = [
     module.agent,

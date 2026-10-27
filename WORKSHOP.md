@@ -71,7 +71,7 @@ credit is used first, so you typically won't be charged during the workshop.
 
      <img src="images/workshop/0_step2_2.png" alt="Billing and payment — Promos, + Promo code" width="500">
 
-## 2. Deploy the infrastructure (~10–12 min)
+## 2. Deploy the infrastructure (~8–10 min)
 
 1. Open a **Terminal** on your machine — click **Activities** (top-left), then the **Terminal**
    icon in the dock.
@@ -124,7 +124,7 @@ tools JAR artifact, and the **4 tables** — but **not** the AI
 pipeline. It also writes a ready-to-use `.env` for the producer and dashboard.
 
 > [!NOTE]
-> Grab a coffee ☕ — it takes **5–7 minutes** to deploy.
+> Grab a coffee ☕ — the deploy itself takes **5–7 minutes**.
 
 ## 3. Start the event stream — generate live activity
 
@@ -153,8 +153,8 @@ Open a **SQL workspace**.
 
 <img src="images/workshop/3_step3_2.png" alt="Compute pool — open SQL Workspace" width="600">
 
-**3. Set the Catalog and Database.** Set the **Catalog** to your `flink_catalog` output and the
-**Database** to your `flink_database` output.
+**3. Set the Catalog and Database.** Set the **Catalog** and **Database** to the **Flink catalog** and **Flink database** values
+printed at the end of `uv run deploy` (the environment and cluster names, e.g. `fraud-agent-env-…`).
 
 <img src="images/workshop/3_step3_3.png" alt="Set the workspace catalog and database" width="700">
 
@@ -341,7 +341,8 @@ single strict-JSON verdict you can store — it *is* the fraud policy.
 ### 🎯 Challenge: Give the agent its model
 
 Build the agent **either** way below — the result is the same. Your challenge in both: point it
-at the model you created in section 5 (need the name? run `SHOW MODELS;`).
+at the model you created in section 5 (need the name? run `SHOW MODELS;` and pick the one you
+created, not a `system.*` model).
 
 **Option A — Streaming Agents UI**
 
@@ -351,7 +352,7 @@ at the model you created in section 5 (need the name? run `SHOW MODELS;`).
    <img src="images/workshop/7_step7_1.png" alt="Left panel — Agents → Create an agent" width="450">
 
 2. **Agent name** — `fraud_detection_agent`.
-3. 🎯 **Model** — pick the model you created from the dropdown.
+3. 🎯 **Model** — pick the model you created from the dropdown (not a `system.*` model).
 4. **Instructions** — paste this fraud-policy prompt:
 
   ```text
@@ -501,7 +502,8 @@ SELECT
   COALESCE(JSON_QUERY(`json_text`, '$.actions_taken'), '[]') AS `actions_taken`,
   COALESCE(JSON_QUERY(`json_text`, '$.flagged_transaction_ids'), '[]') AS `flagged_transaction_ids`,
   `raw_response`
-FROM `scored`;
+FROM `scored`
+WHERE `json_text` IS NOT NULL;
 ```
 
 <details>
