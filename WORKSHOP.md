@@ -37,7 +37,7 @@ These are **not** part of the timed hour. Complete them before the workshop:
 > **Do NOT create a cluster.** Skip the **Add cluster** / **Create cluster** step — Terraform creates its own environment *and* cluster for you. Click the Confluent logo (top-left) to exit the wizard.
 
 <details>
-<summary>Screenshots</summary>
+<summary><strong>Screenshots</strong> (click to expand)</summary>
 
 Verify your email address to continue.
 
@@ -69,7 +69,7 @@ A payment method is required for Terraform to create a **Standard** cluster. Fre
 3. Click **Add credit card / bank account**, enter your **card details**, then **Save**.
 
 <details>
-<summary>Screenshots</summary>
+<summary><strong>Screenshots</strong> (click to expand)</summary>
 
 Select Admin & security, then Billing & payment.
 
