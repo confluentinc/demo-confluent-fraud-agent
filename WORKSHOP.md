@@ -48,6 +48,33 @@ These are **not** part of the timed hour. Complete them before the workshop:
 > creates its own environment *and* cluster for you. Click the Confluent logo (top-left) to
 > exit the wizard.
 
+<details>
+<summary>📸 Screenshots</summary>
+
+Verify your email address to continue.
+
+<img src="images/workshop/0_signup_verification_blurred.jpg" alt="Verification email sent" width="50%">
+
+Click Skip to bypass inviting teammates.
+
+<img src="images/workshop/0_signup_invite.jpg" alt="Invite your teammates — Skip" width="50%">
+
+Complete the onboarding survey and continue.
+
+<img src="images/workshop/0_signup_survey.jpg" alt="Welcome survey, unanswered" width="50%">
+<img src="images/workshop/0_signup_survey_answers.jpg" alt="Welcome survey, answered" width="50%">
+
+Skip the wizard without creating a cluster.
+
+<img src="images/workshop/0_signup_cluster.jpg" alt="Create your first cluster wizard — do not continue" width="50%">
+<img src="images/workshop/0_signup_cluster_options.jpg" alt="Create cluster page — do not create one" width="35%">
+
+Land on the empty Clusters page.
+
+<img src="images/workshop/0_signup_clusters_empty.jpg" alt="Clusters page with no clusters" width="50%">
+
+</details>
+
 #### Step 2 — Add a payment method (credit card)
 
 A payment method is required for Terraform to create a **Standard** cluster. Free
@@ -62,6 +89,20 @@ credit is used first, so you typically won't be charged during the workshop.
 3. Click **Add credit card / bank account**, enter your **card details**, then **Save**.
 
    <img src="images/workshop/0_step2_1.png" alt="Payment details and contacts — Add credit card / bank account" width="500">
+
+<details>
+<summary>📸 Screenshots</summary>
+
+Select Admin & security, then Billing & payment.
+
+<img src="images/workshop/0_billing_navigation.jpg" alt="Admin and security menu" width="50%">
+<img src="images/workshop/0_billing_overview.jpg" alt="Billing and payment overview" width="50%">
+
+Open the Payment details and contacts tab.
+
+<img src="images/workshop/0_billing_payment_details_blurred.jpg" alt="Payment details and contacts tab" width="50%">
+
+</details>
 
 ## 2. Deploy the infrastructure (~8–10 min)
 
