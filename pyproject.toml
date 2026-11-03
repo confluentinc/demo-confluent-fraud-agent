@@ -58,3 +58,7 @@ target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "UP", "RUF"]
+
+[tool.uv]
+# cryptography 49+ ships no Intel macOS wheel, so Intel Macs would compile it from source and fail.
+constraint-dependencies = ["cryptography<49"]
