@@ -123,10 +123,9 @@ cd tools-udf && ./build.sh    # then commit target/fraud-tools.jar
   `user's`), Option B is the SQL string (doubled apostrophe, `user''s`) — that `'`/`''` is the
   only allowed difference between them. The intended differences from `flink.tf`: (a) the windowing
   statement is preceded by `SET 'sql.tables.scan.idle-timeout' = '5 s';` (in `flink.tf` that
-  lives in `module.profiles`'s `extra_properties`); (b) the windowing statement is also preceded
+  lives in `module.profiles`'s `extra_properties`); and (b) the windowing statement is also preceded
   by `SET 'sql.tables.scan.startup.mode' = 'latest-offset';` — **workshop only** (demo
-  intentionally reprocesses from earliest); and (c) both continuous statements carry a
-  `SET 'client.statement-name' = '…';`. Latest-offset keeps each participant's agent calls
+  intentionally reprocesses from earliest). Latest-offset keeps each participant's agent calls
   proportional to live traffic instead of replaying topic history through the model.
 - **Where the model id lives depends on the provider.** CSP Hosted: `var.csp_hosted_model`
   (`'confluent.model'` in `CREATE MODEL`; case-sensitive). Bedrock: the connection endpoint URL
