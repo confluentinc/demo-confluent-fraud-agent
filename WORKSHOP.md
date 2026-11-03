@@ -54,11 +54,6 @@ Complete the onboarding survey and continue.
 Skip the wizard without creating a cluster.
 
 <p align="center"><img src="images/workshop/0_signup_cluster.jpg" alt="Create your first cluster wizard — do not continue" width="50%"></p>
-<p align="center"><img src="images/workshop/0_signup_cluster_options.jpg" alt="Create cluster page — do not create one" width="35%"></p>
-
-Land on the empty Clusters page.
-
-<p align="center"><img src="images/workshop/0_signup_clusters_empty.jpg" alt="Clusters page with no clusters" width="50%"></p>
 
 </details>
 
@@ -73,8 +68,6 @@ A payment method is required for Terraform to create a **Standard** cluster. Fre
 2. Open the **Payment details and contacts** tab.
 3. Click **Add credit card / bank account**, enter your **card details**, then **Save**.
 
-   <img src="images/workshop/0_step2_1.png" alt="Payment details and contacts — Add credit card / bank account" width="500">
-
 <details>
 <summary>Screenshots</summary>
 
@@ -85,6 +78,10 @@ Select Admin & security, then Billing & payment.
 Open the Payment details and contacts tab.
 
 <p align="center"><img src="images/workshop/0_billing_payment_details_blurred.jpg" alt="Payment details and contacts tab" width="50%"></p>
+
+Click **Add credit card / bank account**.
+
+<p align="center"><img src="images/workshop/0_step2_1.png" alt="Payment details and contacts — Add credit card / bank account" width="50%"></p>
 
 </details>
 
