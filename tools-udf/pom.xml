@@ -21,7 +21,7 @@
         <maven.compiler.release>11</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- Confluent Cloud for Apache Flink supports Java 11-17 UDFs. -->
-        <flink.version>1.19.1</flink.version>
+        <flink.version>1.19.2-507</flink.version>
     </properties>
 
     <dependencies>
